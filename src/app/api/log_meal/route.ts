@@ -12,7 +12,6 @@ if (process.env.SERVICE_ACCOUNT_KEY) {
   try {
     const serviceAccount = JSON.parse(process.env.SERVICE_ACCOUNT_KEY);
     if (!getApps().length) {
-      console.log('Initializing Firebase app...');
       initializeApp({
         credential: cert(serviceAccount),
       });
