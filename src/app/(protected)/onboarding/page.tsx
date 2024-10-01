@@ -1,49 +1,33 @@
-'use client'
+import dynamic from 'next/dynamic'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+// Dynamically import the OnboardingContent component
+const OnboardingContent = dynamic(() => import('./OnboardingContent'), {
+  loading: () => <p>Loading...</p>,
+})
 
-const OnboardingPage = () => {
-  const [step, setStep] = useState(1)
-  const router = useRouter()
-
-  const handleNextStep = () => {
-    if (step < 3) {
-      setStep(step + 1)
-    } else {
-      router.push('/dashboard')
-    }
-  }
-
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-4">Welcome to AI Calorie Tracker</h1>
-      {step === 1 && (
-        <div>
-          <h2 className="text-xl mb-2">Step 1: Personal Information</h2>
-          {/* Add form fields for personal information */}
-        </div>
-      )}
-      {step === 2 && (
-        <div>
-          <h2 className="text-xl mb-2">Step 2: Health Goals</h2>
-          {/* Add form fields for health goals */}
-        </div>
-      )}
-      {step === 3 && (
-        <div>
-          <h2 className="text-xl mb-2">Step 3: Dietary Preferences</h2>
-          {/* Add form fields for dietary preferences */}
-        </div>
-      )}
-      <button
-        onClick={handleNextStep}
-        className="mt-4 bg-blue-500 text-white px-4 py-2 rounded"
-      >
-        {step < 3 ? 'Next' : 'Complete'}
-      </button>
-    </div>
-  )
+// Define the main OnboardingPage component
+export default function OnboardingPage() {
+  return <OnboardingContent />
 }
 
-export default OnboardingPage
+// For Non-Technical Readers:
+// 
+// This file sets up the Onboarding page for our AI Calorie Tracker app. Here's what it does:
+// 
+// 1. It uses a technique called "dynamic importing" to load the main content of the onboarding page.
+//    This can help the page load faster initially.
+// 
+// 2. While the main content is loading, it shows a simple "Loading..." message.
+// 
+// 3. Once the content is loaded, it displays the full onboarding page with all its features.
+// 
+// 4. The actual onboarding functionality (like collecting user information and preferences) is now
+//    handled in a separate file called OnboardingContent.tsx. This helps keep this main page file
+//    simple and focused.
+// 
+// 5. This approach can improve the app's performance, especially on slower internet connections,
+//    as it allows the basic structure of the page to load quickly while the more complex parts
+//    are still being prepared.
+// 
+// This setup creates a more efficient and potentially faster-loading onboarding page, while keeping
+// the code organized and easier to manage.

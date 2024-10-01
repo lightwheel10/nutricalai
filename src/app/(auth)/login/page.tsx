@@ -1,83 +1,32 @@
-'use client'
+import dynamic from 'next/dynamic'
 
-import { useState } from 'react'
-import { motion } from 'framer-motion'
-import { Button } from '@/components/ui/button'
-import Link from 'next/link'
-import { ArrowLeft, Lock } from 'lucide-react'
-import { FcGoogle } from 'react-icons/fc'
-import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
-import { useRouter } from 'next/navigation';
+// Dynamically import the LoginContent component
+const LoginContent = dynamic(() => import('./LoginContent'), {
+  loading: () => <p>Loading...</p>,
+})
 
+// Define the main LoginPage component
 export default function LoginPage() {
-  const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
-
-  const handleGoogleSignIn = async () => {
-    setIsLoading(true);
-    try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      // User signed in successfully
-      console.log('User signed in:', result.user);
-      router.push('/dashboard'); // Redirect to dashboard after successful login
-    } catch (error) {
-      console.error('Error signing in with Google:', error);
-      // Handle error (e.g., show error message to user)
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-blue-100 to-white">
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md p-8 space-y-8 bg-white rounded-xl shadow-lg relative"
-      >
-        <Link href="/" className="absolute top-4 left-4 text-gray-600 hover:text-gray-900">
-          <ArrowLeft size={24} />
-        </Link>
-        <div className="flex justify-center">
-          <Lock className="w-12 h-12 text-blue-500" />
-        </div>
-        <motion.h2
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-          className="text-3xl font-bold text-center text-gray-900"
-        >
-          Sign In
-        </motion.h2>
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4, duration: 0.5 }}
-        >
-          <Button
-            onClick={handleGoogleSignIn}
-            disabled={isLoading}
-            className="w-full py-2 px-4 flex justify-center items-center bg-white hover:bg-gray-100 focus:ring-gray-500 focus:ring-offset-gray-200 text-gray-700 transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg"
-          >
-            {isLoading ? (
-              'Signing in...'
-            ) : (
-              <>
-                <FcGoogle className="mr-2 h-5 w-5" />
-                Sign in with Google
-              </>
-            )}
-          </Button>
-        </motion.div>
-        <div className="text-center">
-          <Link href="/contact" className="text-sm text-blue-600 hover:text-blue-800">
-            Having trouble? Contact us
-          </Link>
-        </div>
-      </motion.div>
-    </div>
-  )
+  return <LoginContent />
 }
+
+// For Non-Technical Readers:
+// 
+// This code sets up the login page for a web application. Here's what it does in simple terms:
+// 
+// 1. It uses a technique called "dynamic importing" to load the main content of the login page.
+//    This can help the page load faster initially.
+// 
+// 2. While the main content is loading, it shows a simple "Loading..." message.
+// 
+// 3. Once the content is loaded, it displays the full login page with all its features.
+// 
+// 4. The actual login functionality (like the Google sign-in button) is now handled in a separate file
+//    called LoginContent.tsx. This helps keep this main page file simple and focused.
+// 
+// 5. This approach can improve the app's performance, especially on slower internet connections,
+//    as it allows the basic structure of the page to load quickly while the more complex parts
+//    are still being prepared.
+// 
+// This setup creates a more efficient and potentially faster-loading login page, while keeping
+// the code organized and easier to manage.

@@ -1,10 +1,3 @@
-// For Non-Technical Readers:
-// This file contains the code for the Activity Logging page of our AI Calorie Tracker app.
-// It allows users to log their daily activities such as steps taken, workouts performed,
-// and their current weight. Users can also view their past activity logs. The page is
-// designed to be user-friendly and interactive, providing immediate feedback when an
-// activity is logged successfully.
-
 'use client'
 
 // Importing necessary React hooks and UI components
@@ -26,7 +19,7 @@ interface Activity {
   weight: string
 }
 
-const ActivityPage = () => {
+const ActivityContent = () => {
   // State variables to manage form inputs and activity log
   const [steps, setSteps] = useState('') // Stores the number of steps
   const [workout, setWorkout] = useState('') // Stores workout details
@@ -136,4 +129,4 @@ const ActivityPage = () => {
   )
 }
 
-export default ActivityPage
+export default ActivityContent
