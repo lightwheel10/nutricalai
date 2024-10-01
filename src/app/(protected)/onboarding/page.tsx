@@ -1,8 +1,9 @@
 import dynamic from 'next/dynamic'
 
-// Dynamically import the OnboardingContent component
+// Dynamically import the OnboardingContent component with ssr: false
 const OnboardingContent = dynamic(() => import('./OnboardingContent'), {
   loading: () => <p>Loading...</p>,
+  ssr: false
 })
 
 // Define the main OnboardingPage component
@@ -25,9 +26,11 @@ export default function OnboardingPage() {
 //    handled in a separate file called OnboardingContent.tsx. This helps keep this main page file
 //    simple and focused.
 // 
-// 5. This approach can improve the app's performance, especially on slower internet connections,
-//    as it allows the basic structure of the page to load quickly while the more complex parts
-//    are still being prepared.
+// 5. This approach improves the app's performance by ensuring that Firebase-related code is only
+//    loaded on the client side. This is achieved by setting 'ssr: false' in the dynamic import.
+// 
+// 6. Loading the Firebase-related content only on the client side helps avoid potential issues
+//    with server-side rendering, as Firebase is typically used for client-side operations.
 // 
 // This setup creates a more efficient and potentially faster-loading onboarding page, while keeping
-// the code organized and easier to manage.
+// the code organized, easier to manage, and compatible with client-side Firebase operations.

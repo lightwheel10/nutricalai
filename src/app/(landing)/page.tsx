@@ -3,6 +3,7 @@ import dynamic from 'next/dynamic'
 // Dynamically import the LandingContent component
 const LandingContent = dynamic(() => import('./LandingContent'), {
   loading: () => <p>Loading...</p>,
+  ssr: false // Ensure client-side only rendering
 })
 
 // Define the main LandingPage component
@@ -29,5 +30,10 @@ export default function LandingPage() {
 //    as it allows the basic structure of the page to load quickly while the more complex parts
 //    are still being prepared.
 // 
+// 6. By setting 'ssr: false', we ensure that the LandingContent component is only loaded on the
+//    client side. This is important for components that use Firebase or other browser-specific
+//    features, as it prevents issues with server-side rendering.
+// 
 // This setup creates a more efficient and potentially faster-loading landing page, while keeping
-// the code organized and easier to manage.
+// the code organized and easier to manage, and ensures compatibility with client-side only
+// libraries like Firebase.

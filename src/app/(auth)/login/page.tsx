@@ -3,6 +3,7 @@ import dynamic from 'next/dynamic'
 // Dynamically import the LoginContent component
 const LoginContent = dynamic(() => import('./LoginContent'), {
   loading: () => <p>Loading...</p>,
+  ssr: false
 })
 
 // Define the main LoginPage component
@@ -28,5 +29,8 @@ export default function LoginPage() {
 //    as it allows the basic structure of the page to load quickly while the more complex parts
 //    are still being prepared.
 // 
+// 6. The 'ssr: false' option ensures that the LoginContent component is only loaded on the client side.
+//    This is important for components that use Firebase, as Firebase should not be initialized on the server.
+// 
 // This setup creates a more efficient and potentially faster-loading login page, while keeping
-// the code organized and easier to manage.
+// the code organized and easier to manage, and ensures proper client-side loading of Firebase-related code.

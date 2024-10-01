@@ -3,6 +3,7 @@ import dynamic from 'next/dynamic'
 // Dynamically import the HistoryContent component
 const HistoryContent = dynamic(() => import('./HistoryContent'), {
   loading: () => <p>Loading...</p>,
+  ssr: false
 })
 
 // Define the main HistoryPage component
@@ -25,9 +26,14 @@ export default function HistoryPage() {
 //    handled in a separate file called HistoryContent.tsx. This helps keep this main page file
 //    simple and focused.
 // 
-// 5. This approach can improve the app's performance, especially on slower internet connections,
+// 5. This approach improves the app's performance, especially on slower internet connections,
 //    as it allows the basic structure of the page to load quickly while the more complex parts
 //    are still being prepared.
 // 
+// 6. By setting 'ssr: false', we ensure that the HistoryContent component (which contains 
+//    Firebase-related code) is only loaded on the client side. This is important for proper 
+//    functionality with Firebase and prevents server-side rendering issues.
+// 
 // This setup creates a more efficient and potentially faster-loading history page, while keeping
-// the code organized and easier to manage.
+// the code organized and easier to manage, and ensures compatibility with client-side only
+// features like Firebase.
