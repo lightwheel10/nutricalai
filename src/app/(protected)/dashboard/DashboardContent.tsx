@@ -49,6 +49,12 @@ const DashboardContent = () => {
   const [dashboardTimeFrame, setDashboardTimeFrame] = useState('today');
 
   useEffect(() => {
+    if (!auth) {
+      console.error('Firebase auth is not initialized');
+      router.push('/login');
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
@@ -308,8 +314,13 @@ const DashboardContent = () => {
           </Button>
         </nav>
         <Button variant="ghost" className={`justify-start text-black m-4 ${isSidebarOpen ? '' : 'px-2'}`} onClick={() => {
-          auth.signOut();
-          router.push('/login');
+          if (auth) {
+            auth.signOut();
+            router.push('/login');
+          } else {
+            console.error('Firebase auth is not initialized');
+            router.push('/login');
+          }
         }}>
           <LogOut className="h-4 w-4" />
           {isSidebarOpen && <span className="ml-2">Logout</span>}

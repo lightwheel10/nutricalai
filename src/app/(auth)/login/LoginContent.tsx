@@ -17,6 +17,9 @@ export default function LoginContent() {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
+      if (!auth) {
+        throw new Error('Firebase auth is not initialized');
+      }
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       console.log('User signed in:', result.user);

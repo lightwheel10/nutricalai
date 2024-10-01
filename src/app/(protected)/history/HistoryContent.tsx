@@ -8,12 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Coffee, Utensils, Pizza, Apple, ChevronRight, CalendarIcon, Clock, User, Bot, Tag, Flame, Scale, X, Edit, Trash } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, startOfDay, endOfDay, parseISO } from 'date-fns';
-import { auth } from '@/lib/firebase';
-import { getFirestore, doc, updateDoc, deleteDoc, collection, onSnapshot } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
+import { doc, updateDoc, deleteDoc, collection, onSnapshot } from 'firebase/firestore';
 import { Meal } from './types';
 import { EditMealDialog } from '@/components/dashboard/EditMealDialog';
-
-const db = getFirestore();
 
 const HistoryContent = () => {
   const [selectedMeal, setSelectedMeal] = useState<number | null>(null);
@@ -27,6 +25,11 @@ const HistoryContent = () => {
 
   useEffect(() => {
     const fetchMeals = async () => {
+      if (!auth || !db) {
+        console.error("Firebase is not initialized");
+        return;
+      }
+
       const user = auth.currentUser;
       if (!user) {
         console.error("User not authenticated");
@@ -113,12 +116,18 @@ const HistoryContent = () => {
   };
 
   const handleSaveEdit = async (updatedMeal: Meal) => {
+    if (!auth || !db) {
+      console.error("Firebase is not initialized");
+      return;
+    }
+
+    const user = auth.currentUser;
+    if (!user) {
+      console.error("User not authenticated");
+      return;
+    }
+
     try {
-      const user = auth.currentUser;
-      if (!user) {
-        console.error("User not authenticated");
-        return;
-      }
       const mealDocRef = doc(db, 'users', user.uid, 'meals', updatedMeal.id);
       const updateData = {
         input_text: updatedMeal.input_text,
@@ -134,15 +143,21 @@ const HistoryContent = () => {
     }
   };
 
-  const handleDelete = async (mealId: string) => {
+  const handleDeleteMeal = async (mealId: string) => {
+    if (!auth || !db) {
+      console.error("Firebase is not initialized");
+      return;
+    }
+
+    const user = auth.currentUser;
+    if (!user) {
+      console.error("User not authenticated");
+      return;
+    }
+
     try {
-      const user = auth.currentUser;
-      if (!user) {
-        console.error("User not authenticated");
-        return;
-      }
-      const mealDocRef = doc(db, 'users', user.uid, 'meals', mealId);
-      await deleteDoc(mealDocRef);
+      await deleteDoc(doc(db, 'users', user.uid, 'meals', mealId));
+      console.log("Meal deleted successfully");
     } catch (error) {
       console.error("Error deleting meal:", error);
     }
@@ -228,7 +243,7 @@ const HistoryContent = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDelete(meal.id)}
+                        onClick={() => handleDeleteMeal(meal.id)}
                         className="text-red-500 hover:text-red-700"
                       >
                         <Trash className="h-4 w-4" />

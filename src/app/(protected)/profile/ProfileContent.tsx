@@ -26,6 +26,12 @@ export default function ProfileContent() {
   const [updatedProfile, setUpdatedProfile] = useState<UserProfile | null>(null)
 
   useEffect(() => {
+    if (!auth) {
+      console.error("Firebase auth is not initialized");
+      router.push('/login');
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         const db = getFirestore()
@@ -50,6 +56,11 @@ export default function ProfileContent() {
   }
 
   const handleSave = async () => {
+    if (!auth) {
+      console.error("Firebase auth is not initialized");
+      return;
+    }
+
     if (user && updatedProfile && auth.currentUser) {
       const db = getFirestore()
       const updateData: Partial<UserProfile> = {}

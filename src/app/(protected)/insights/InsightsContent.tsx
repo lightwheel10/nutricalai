@@ -44,6 +44,11 @@ const InsightsContent = () => {
 
   useEffect(() => {
     const fetchMeals = async () => {
+      if (!auth) {
+        console.error("Firebase auth is not initialized");
+        return;
+      }
+
       const user = auth.currentUser;
       if (!user) {
         console.error("User not authenticated");

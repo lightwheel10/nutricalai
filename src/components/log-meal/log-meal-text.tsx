@@ -18,6 +18,11 @@ export function LogMealText({ onLogMeal }: LogMealTextProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogMeal = async () => {
+    if (!auth) {
+      setError('Authentication is not initialized.');
+      return;
+    }
+
     const user = auth.currentUser;
     if (!user) {
       setError('You must be logged in to log a meal.');

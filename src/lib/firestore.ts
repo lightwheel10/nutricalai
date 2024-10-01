@@ -1,8 +1,11 @@
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from './firebase'; // Reuse the initialized Firestore instance
-import { auth } from './firebase'; // Import the auth instance
+import { collection, query, where, getDocs, Firestore } from 'firebase/firestore';
+import { db, auth } from './firebase';
 
 export async function getFirestoreData(from: Date, to: Date) {
+  if (!auth || !db) {
+    throw new Error('Firebase is not initialized');
+  }
+
   const user = auth.currentUser;
   if (!user) {
     throw new Error('User is not authenticated');
@@ -16,7 +19,7 @@ export async function getFirestoreData(from: Date, to: Date) {
   console.log(`Converted date strings - from: ${fromString}, to: ${toString}`);
 
   const q = query(
-    collection(db, `users/${userId}/meals`), // Access the correct path
+    collection(db as Firestore, `users/${userId}/meals`),
     where('loggedAt', '>=', fromString),
     where('loggedAt', '<=', toString)
   );

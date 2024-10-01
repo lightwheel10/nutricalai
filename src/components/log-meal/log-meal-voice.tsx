@@ -48,7 +48,16 @@ export function LogMealVoice({ onLogMeal }: LogMealVoiceProps) {
     recognition.onresult = async (event: SpeechRecognitionEvent) => {
       const transcript = event.results[0][0].transcript;
       try {
-        const token = await auth.currentUser?.getIdToken();
+        if (!auth) {
+          console.error("Firebase auth is not initialized");
+          return;
+        }
+        const currentUser = auth.currentUser;
+        if (!currentUser) {
+          console.error("User is not authenticated");
+          return;
+        }
+        const token = await currentUser.getIdToken();
         const response = await axios.post(`${apiUrl}/log_and_analyze_meal`, 
           { input_text: transcript, loggedBy: 'AI' },
           {
