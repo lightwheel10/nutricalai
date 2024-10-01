@@ -1,33 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, Firestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import Groq from 'groq-sdk';
 
-const serviceAccountKey = process.env.SERVICE_ACCOUNT_KEY;
+let db: Firestore | undefined;
 
-if (!getApps().length && serviceAccountKey) {
+console.log('Starting Firebase initialization...');
+
+if (process.env.SERVICE_ACCOUNT_KEY) {
   try {
-    const parsedServiceAccount = JSON.parse(serviceAccountKey);
-    
-    if (!parsedServiceAccount.project_id || !parsedServiceAccount.private_key || !parsedServiceAccount.client_email) {
-      console.error('Invalid SERVICE_ACCOUNT_KEY format: missing required fields');
-      // Don't throw an error, just log it
-      // throw new Error('Invalid SERVICE_ACCOUNT_KEY format: missing required fields');
-    } else {
+    const serviceAccount = JSON.parse(process.env.SERVICE_ACCOUNT_KEY);
+    if (!getApps().length) {
+      console.log('Initializing Firebase app...');
       initializeApp({
-        credential: cert(parsedServiceAccount),
+        credential: cert(serviceAccount),
       });
-      console.log('Firebase Admin SDK initialized successfully');
+      console.log('Firebase app initialized successfully');
+    } else {
+      console.log('Firebase app already initialized');
     }
+    db = getFirestore();
+    console.log('Firestore instance created');
   } catch (error) {
     console.error("Error initializing Firebase Admin SDK:", error);
-    // Don't throw an error, just log it
-    // throw new Error('Failed to initialize Firebase Admin SDK');
   }
+} else {
+  console.warn('SERVICE_ACCOUNT_KEY not set. Firebase Admin SDK not initialized.');
 }
 
-const db = getFirestore();
+console.log('Firebase initialization process completed');
 
 const schema = {
   type: "object",
@@ -53,6 +55,7 @@ const schema = {
 };
 
 export async function POST(req: NextRequest) {
+  console.log("POST request received in log_meal route");
   const { input_text, loggedBy } = await req.json();
   console.log("Received request in log_meal:", { input_text, loggedBy });
 
@@ -65,6 +68,12 @@ export async function POST(req: NextRequest) {
   const token = authHeader.split(' ')[1];
 
   try {
+    if (!db) {
+      console.error('Firestore instance not available');
+      throw new Error('Firebase Admin SDK not initialized');
+    }
+
+    console.log("Verifying Firebase ID token...");
     const decodedToken = await getAuth().verifyIdToken(token);
     const userId = decodedToken.uid;
     console.log("Authenticated user:", userId);
