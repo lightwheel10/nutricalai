@@ -6,27 +6,24 @@ import Groq from 'groq-sdk';
 
 const serviceAccountKey = process.env.SERVICE_ACCOUNT_KEY;
 
-if (!serviceAccountKey) {
-  console.error('SERVICE_ACCOUNT_KEY environment variable is not set');
-  throw new Error('SERVICE_ACCOUNT_KEY environment variable is not set');
-}
-
-if (!getApps().length) {
+if (!getApps().length && serviceAccountKey) {
   try {
     const parsedServiceAccount = JSON.parse(serviceAccountKey);
     
     if (!parsedServiceAccount.project_id || !parsedServiceAccount.private_key || !parsedServiceAccount.client_email) {
       console.error('Invalid SERVICE_ACCOUNT_KEY format: missing required fields');
-      throw new Error('Invalid SERVICE_ACCOUNT_KEY format: missing required fields');
+      // Don't throw an error, just log it
+      // throw new Error('Invalid SERVICE_ACCOUNT_KEY format: missing required fields');
+    } else {
+      initializeApp({
+        credential: cert(parsedServiceAccount),
+      });
+      console.log('Firebase Admin SDK initialized successfully');
     }
-
-    initializeApp({
-      credential: cert(parsedServiceAccount),
-    });
-    console.log('Firebase Admin SDK initialized successfully');
   } catch (error) {
     console.error("Error initializing Firebase Admin SDK:", error);
-    throw new Error('Failed to initialize Firebase Admin SDK');
+    // Don't throw an error, just log it
+    // throw new Error('Failed to initialize Firebase Admin SDK');
   }
 }
 
