@@ -33,10 +33,10 @@ export default function SignUpContent() {
       } else if (data) {
         toast({
           title: "Signup Successful",
-          description: "Welcome to the dashboard!",
+          description: "You can now log in with your credentials.",
           variant: "default",
         });
-        router.push('/dashboard');
+        router.push('/login');
       }
     } catch (error) {
       console.error('Unexpected error during signup:', error);
