@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import { ArrowLeft, Lock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { signIn } from '@/lib/supabase';
 import { useToast } from "@/hooks/use-toast";
 
 export default function LoginContent() {
@@ -22,28 +22,27 @@ export default function LoginContent() {
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { data, error } = await signIn(email, password);
 
-      if (error) throw error;
-
-      router.push('/dashboard');
-    } catch (error) {
-      if (error instanceof Error) {
+      if (error) {
+        console.error('Login error:', error);
         toast({
           title: "Login Error",
           description: error.message,
           variant: "destructive",
         });
+      } else if (data) {
+        router.push('/dashboard');
       } else {
-        toast({
-          title: "Login Error",
-          description: "An unexpected error occurred",
-          variant: "destructive",
-        });
+        throw new Error('No data returned from signIn');
       }
+    } catch (error) {
+      console.error('Unexpected error during login:', error);
+      toast({
+        title: "Login Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }

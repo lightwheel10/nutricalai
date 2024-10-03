@@ -38,11 +38,20 @@ export async function signUp(email: string, password: string) {
 }
 
 export async function signIn(email: string, password: string) {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  })
-  return { data, error }
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error: unknown) {
+    console.error('Signin error:', error);
+    if (error instanceof Error) {
+      return { data: null, error: { message: error.message } };
+    }
+    return { data: null, error: { message: 'An unexpected error occurred' } };
+  }
 }
 
 export async function signOut() {
