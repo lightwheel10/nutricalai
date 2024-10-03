@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Mic } from 'lucide-react'
 import axios from 'axios'
-import { auth } from '@/lib/firebase'
+import { supabase } from '@/lib/supabase'
 
 interface LogMealVoiceProps {
   onLogMeal: (input: string) => void
@@ -48,16 +48,12 @@ export function LogMealVoice({ onLogMeal }: LogMealVoiceProps) {
     recognition.onresult = async (event: SpeechRecognitionEvent) => {
       const transcript = event.results[0][0].transcript;
       try {
-        if (!auth) {
-          console.error("Firebase auth is not initialized");
-          return;
-        }
-        const currentUser = auth.currentUser;
-        if (!currentUser) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
           console.error("User is not authenticated");
           return;
         }
-        const token = await currentUser.getIdToken();
+        const token = session.access_token;
         const response = await axios.post(`${apiUrl}/log_and_analyze_meal`, 
           { input_text: transcript, loggedBy: 'AI' },
           {

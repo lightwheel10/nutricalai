@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area, Legend } from 'recharts'
-import { getFirestoreData } from '@/lib/firestore'
+import { supabase } from '@/lib/supabase'
 import { DateRange } from 'react-day-picker'
 
 // Define an array of colors for chart elements
@@ -36,7 +36,7 @@ const Overview = () => {
   const [isReportGenerated, setIsReportGenerated] = useState<boolean>(false)
   const [isLoading, setIsLoading] = useState<boolean>(false)
 
-  // Function to fetch report data from Firestore
+  // Function to fetch report data from Supabase
   async function fetchReportData() {
     if (!dateRange?.from || !dateRange?.to) {
       console.error('Date range is not fully defined');
@@ -44,7 +44,26 @@ const Overview = () => {
     }
 
     setIsLoading(true)
-    const data = await getFirestoreData(dateRange.from, dateRange.to)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      console.error("User not authenticated");
+      setIsLoading(false)
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('meals')
+      .select('*')
+      .eq('user_id', user.id)
+      .gte('logged_at', dateRange.from.toISOString())
+      .lte('logged_at', dateRange.to.toISOString())
+
+    if (error) {
+      console.error('Error fetching data:', error);
+      setIsLoading(false)
+      return;
+    }
+
     console.log('Report data:', data);
     setReportData(data as ReportData[])
     setIsLoading(false)
@@ -353,7 +372,7 @@ This code creates a powerful and interactive nutrition overview dashboard. Here'
 1. Date Selection: Users can choose a specific date range for their nutrition data.
 2. Report Type Selection: Users can select what kind of nutritional information they want to see (calories, macronutrients, or micronutrients).
 3. Chart Type Selection: Users can choose how they want to visualize their data (line chart, pie chart, bar chart, etc.).
-4. Data Fetching: When the user clicks "Generate Report", the dashboard fetches the relevant nutrition data from a database.
+4. Data Fetching: When the user clicks "Generate Report", the dashboard fetches the relevant nutrition data from Supabase.
 5. Data Processing: The code processes the raw data, organizing it by date and calculating totals for the selected nutritional information.
 6. Visualization: The processed data is then displayed in the chosen chart type, allowing users to easily see trends and patterns in their nutrition over time.
 7. Interactivity: Users can change their selections at any time to view different aspects of their nutritional data or to update the date range.

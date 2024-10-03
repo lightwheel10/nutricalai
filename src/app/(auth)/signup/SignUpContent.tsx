@@ -5,41 +5,47 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
-import { ArrowLeft, Lock } from 'lucide-react';
+import { ArrowLeft, UserPlus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { signUp } from '@/lib/supabase';
 import { useToast } from "@/hooks/use-toast";
 
-export default function LoginContent() {
+export default function SignUpContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
-  const handleSignIn = async (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { data, error } = await signUp(email, password);
 
       if (error) throw error;
 
-      router.push('/dashboard');
+      if (data.user) {
+        toast({
+          title: "Sign Up Successful",
+          description: "Please check your email to confirm your account.",
+          variant: "default",
+        });
+        router.push('/login');
+      } else {
+        throw new Error('Sign up failed. Please try again.');
+      }
     } catch (error) {
       if (error instanceof Error) {
         toast({
-          title: "Login Error",
+          title: "Sign Up Error",
           description: error.message,
           variant: "destructive",
         });
       } else {
         toast({
-          title: "Login Error",
+          title: "Sign Up Error",
           description: "An unexpected error occurred",
           variant: "destructive",
         });
@@ -61,7 +67,7 @@ export default function LoginContent() {
           <ArrowLeft size={24} />
         </Link>
         <div className="flex justify-center">
-          <Lock className="w-12 h-12 text-blue-500" />
+          <UserPlus className="w-12 h-12 text-blue-500" />
         </div>
         <motion.h2
           initial={{ opacity: 0 }}
@@ -69,13 +75,13 @@ export default function LoginContent() {
           transition={{ delay: 0.2, duration: 0.5 }}
           className="text-3xl font-bold text-center text-gray-900"
         >
-          Sign In
+          Sign Up
         </motion.h2>
         <motion.form
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4, duration: 0.5 }}
-          onSubmit={handleSignIn}
+          onSubmit={handleSignUp}
           className="space-y-6"
         >
           <div>
@@ -101,17 +107,14 @@ export default function LoginContent() {
             disabled={isLoading}
             className="w-full"
           >
-            {isLoading ? 'Signing in...' : 'Sign in'}
+            {isLoading ? 'Signing up...' : 'Sign up'}
           </Button>
         </motion.form>
-        <div className="text-center space-y-2">
-          <Link href="/forgot-password" className="text-sm text-blue-600 hover:text-blue-800">
-            Forgot password?
-          </Link>
+        <div className="text-center">
           <p className="text-sm">
-            Don&apos;t have an account?{' '}
-            <Link href="/signup" className="text-blue-600 hover:text-blue-800">
-              Sign up
+            Already have an account?{' '}
+            <Link href="/login" className="text-blue-600 hover:text-blue-800">
+              Sign in
             </Link>
           </p>
         </div>

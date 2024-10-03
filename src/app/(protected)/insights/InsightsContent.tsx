@@ -1,5 +1,6 @@
 'use client'
 
+// Import necessary dependencies and components
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -8,14 +9,14 @@ import { ResponsiveContainer, PieChart, Pie, Cell, Legend, Tooltip } from 'recha
 import { motion } from 'framer-motion'
 import { DashboardCard } from '@/components/dashboard/dashboard-card'
 import { NutrientProgress } from '@/components/dashboard/nutrient-progress'
-import { getFirestore, collection, onSnapshot } from 'firebase/firestore'
-import { auth } from '@/lib/firebase'
-import { Meal } from '../history/types'
+import { supabase } from '@/lib/supabase'
 import { calculateMacronutrients, calculateMicronutrients } from '@/utils/nutrientCalculations';
 import Overview from '@/components/insight/overview'
 
+// Define colors for the pie chart
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28']
 
+// Define the structure for micronutrient data
 interface MicroData {
   'Vitamin C': { value: number; max: number };
   'Iron': { value: number; max: number };
@@ -25,7 +26,9 @@ interface MicroData {
   'Sodium': { value: number; max: number };
 }
 
+// Main component for displaying insights
 const InsightsContent = () => {
+  // State variables to store various nutritional data
   const [caloriesConsumed, setCaloriesConsumed] = useState(0)
   const calorieGoal = 2200
   const [macroData, setMacroData] = useState([
@@ -42,55 +45,67 @@ const InsightsContent = () => {
     'Sodium': { value: 0, max: 2300 }
   })
 
+  // Effect hook to fetch and process meal data
   useEffect(() => {
     const fetchMeals = async () => {
-      if (!auth) {
-        console.error("Firebase auth is not initialized");
-        return;
-      }
-
-      const user = auth.currentUser;
+      // Fetch user data
+      const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
         console.error("User not authenticated");
         return;
       }
 
-      const db = getFirestore();
-      const userMealsRef = collection(db, 'users', user.uid, 'meals');
-      const unsubscribe = onSnapshot(userMealsRef, (snapshot) => {
-        const meals = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Meal));
+      // Fetch meals for the user
+      const { data: meals, error } = await supabase
+        .from('meals')
+        .select('*')
+        .eq('user_id', user.id)
 
-        // Calculate total calories consumed for today
-        const today = new Date().toISOString().split('T')[0];
-        const todayCalories = meals
-          .filter(meal => meal.loggedAt.startsWith(today))
-          .reduce((sum, meal) => sum + (meal.mealDetails.calories || 0), 0);
-        setCaloriesConsumed(todayCalories);
+      if (error) {
+        console.error("Error fetching meals:", error);
+        return;
+      }
 
-        // Calculate macronutrients for today
-        const macros = calculateMacronutrients(meals.filter(meal => meal.loggedAt.startsWith(today)));
-        console.log("Macros:", macros); // Debugging log
-        setMacroData(macros);
+      // Calculate total calories consumed for today
+      const today = new Date().toISOString().split('T')[0];
+      const todayCalories = meals
+        .filter(meal => meal.logged_at.startsWith(today))
+        .reduce((sum, meal) => sum + (meal.meal_details.calories || 0), 0);
+      setCaloriesConsumed(todayCalories);
 
-        // Calculate micronutrients for today
-        const micros = calculateMicronutrients(meals.filter(meal => meal.loggedAt.startsWith(today)));
-        console.log("Micros:", micros); // Debugging log
-        setMicroData(prevMicroData => ({
-          ...prevMicroData,
-          ...Object.fromEntries(
-            Object.entries(micros).map(([key, value]) => [key, { value, max: prevMicroData[key as keyof MicroData].max }])
-          )
-        }));
-      });
+      // Calculate macronutrients for today
+      const macros = calculateMacronutrients(meals.filter(meal => meal.logged_at.startsWith(today)));
+      console.log("Macros:", macros); // Debugging log
+      setMacroData(macros);
 
-      return () => unsubscribe();
+      // Calculate micronutrients for today
+      const micros = calculateMicronutrients(meals.filter(meal => meal.logged_at.startsWith(today)));
+      console.log("Micros:", micros); // Debugging log
+      setMicroData(prevMicroData => ({
+        ...prevMicroData,
+        ...Object.fromEntries(
+          Object.entries(micros).map(([key, value]) => [key, { value, max: prevMicroData[key as keyof MicroData].max }])
+        )
+      }));
     };
 
     fetchMeals();
+
+    // Set up real-time subscription for meal updates
+    const mealSubscription = supabase
+      .channel('meals')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'meals' }, fetchMeals)
+      .subscribe()
+
+    // Cleanup function to remove the subscription
+    return () => {
+      supabase.removeChannel(mealSubscription)
+    };
   }, []);
 
   return (
     <div className="p-4">
+      {/* Tabs for different sections of insights */}
       <Tabs defaultValue="overview">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -101,10 +116,12 @@ const InsightsContent = () => {
           <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
 
+        {/* Overview tab content */}
         <TabsContent value="overview">
           <Overview />
         </TabsContent>
 
+        {/* Calories tab content */}
         <TabsContent value="calories">
           <Card>
             <CardHeader>
@@ -138,6 +155,7 @@ const InsightsContent = () => {
           </Card>
         </TabsContent>
 
+        {/* Macronutrients tab content */}
         <TabsContent value="macros">
           <Card>
             <CardHeader>
@@ -178,6 +196,7 @@ const InsightsContent = () => {
           </Card>
         </TabsContent>
 
+        {/* Micronutrients tab content */}
         <TabsContent value="micros">
           <Card>
             <CardHeader>
@@ -200,6 +219,7 @@ const InsightsContent = () => {
           </Card>
         </TabsContent>
 
+        {/* Activity tab content (placeholder) */}
         <TabsContent value="activity">
           <Card>
             <CardHeader>
@@ -216,3 +236,22 @@ const InsightsContent = () => {
 }
 
 export default InsightsContent
+
+{/* 
+  For Non-Technical Readers:
+  
+  This component, InsightsContent, is responsible for displaying various health and nutrition insights to the user. 
+  It includes several sections:
+
+  1. Overview: A general summary of the user's health data.
+  2. Weight: (Not implemented in this code snippet) Likely to show weight trends.
+  3. Calories: Shows the user's calorie intake for the day compared to their goal.
+  4. Macros: Displays the breakdown of macronutrients (carbs, protein, fat) in a pie chart.
+  5. Micros: Shows the user's intake of various micronutrients (vitamins and minerals) compared to recommended values.
+  6. Activity: (Not implemented in this code snippet) Likely to show physical activity data.
+
+  The component fetches the user's meal data from a database and calculates various nutritional metrics. 
+  It then presents this information in an easy-to-understand format using charts and progress bars.
+
+  This tool can help users track their nutrition and make informed decisions about their diet and health.
+*/}

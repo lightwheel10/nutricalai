@@ -14,13 +14,16 @@ import ActivityPage from '../activity/page';
 import SettingsPage from '../settings/page';
 import { LogMealVoice } from '@/components/log-meal/log-meal-voice';
 import { LogMealText } from '@/components/log-meal/log-meal-text';
-import { auth } from '@/lib/firebase';
-import { getFirestore, collection, onSnapshot } from 'firebase/firestore';
 import { Meal } from '../history/types';
 import { useRouter } from 'next/navigation';
-import { onAuthStateChanged, User } from 'firebase/auth';
 import { calculateMacronutrients, calculateMicronutrients } from '@/utils/nutrientCalculations';
 import { prepareCalorieTrendData } from '@/utils/prepareChartData';
+import { supabase } from '@/lib/supabase';
+
+interface User {
+  id: string;
+  // Add other user properties as needed
+}
 
 const DashboardContent = () => {
   const router = useRouter();
@@ -49,53 +52,50 @@ const DashboardContent = () => {
   const [dashboardTimeFrame, setDashboardTimeFrame] = useState('today');
 
   useEffect(() => {
-    if (!auth) {
-      console.error('Firebase auth is not initialized');
-      router.push('/login');
-      return;
-    }
-
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
+    const fetchUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user as User);
       setLoading(false);
-      if (!currentUser) {
+      if (!user) {
         router.push('/login');
       }
-    });
+    };
 
-    return () => unsubscribe();
+    fetchUser();
   }, [router]);
 
   useEffect(() => {
     const fetchMeals = async () => {
       if (!user) return;
 
-      const db = getFirestore();
-      const userMealsRef = collection(db, 'users', user.uid, 'meals');
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
 
-      const unsubscribe = onSnapshot(userMealsRef, (snapshot) => {
-        const meals = snapshot.docs
-          .map(doc => ({ id: doc.id, ...doc.data() } as Meal))
-          .filter(meal => new Date(meal.loggedAt) >= sevenDaysAgo);
+      const { data: meals, error } = await supabase
+        .from('meals')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('logged_at', sevenDaysAgo.toISOString())
+        .order('logged_at', { ascending: false });
 
-        setMealHistory(meals);
-        
-        const today = new Date().toISOString().split('T')[0];
-        const todayCalories = meals
-          .filter(meal => meal.loggedAt.startsWith(today))
-          .reduce((sum, meal) => sum + (meal.mealDetails.calories || 0), 0);
-        setCaloriesConsumed(todayCalories);
+      if (error) {
+        console.error('Error fetching meals:', error);
+        return;
+      }
 
-        const macros = calculateMacronutrients(meals.filter(meal => meal.loggedAt.startsWith(today)));
-        setMacroData(macros);
+      setMealHistory(meals as Meal[]);
+      
+      const today = new Date().toISOString().split('T')[0];
+      const todayCalories = meals
+        .filter((meal: Meal) => meal.loggedAt.startsWith(today))
+        .reduce((sum: number, meal: Meal) => sum + (meal.mealDetails.calories || 0), 0);
+      setCaloriesConsumed(todayCalories);
 
-        const micros = calculateMicronutrients(meals.filter(meal => meal.loggedAt.startsWith(today)));
-        setMicroData(micros);
-      });
+      const macros = calculateMacronutrients(meals.filter((meal: Meal) => meal.loggedAt.startsWith(today)));
+      setMacroData(macros);
 
-      return () => unsubscribe();
+      const micros = calculateMicronutrients(meals.filter((meal: Meal) => meal.loggedAt.startsWith(today)));
+      setMicroData(micros);
     };
 
     if (user) {
@@ -313,12 +313,11 @@ const DashboardContent = () => {
             {isSidebarOpen && <span className="ml-2">Settings</span>}
           </Button>
         </nav>
-        <Button variant="ghost" className={`justify-start text-black m-4 ${isSidebarOpen ? '' : 'px-2'}`} onClick={() => {
-          if (auth) {
-            auth.signOut();
-            router.push('/login');
+        <Button variant="ghost" className={`justify-start text-black m-4 ${isSidebarOpen ? '' : 'px-2'}`} onClick={async () => {
+          const { error } = await supabase.auth.signOut();
+          if (error) {
+            console.error('Error signing out:', error);
           } else {
-            console.error('Firebase auth is not initialized');
             router.push('/login');
           }
         }}>

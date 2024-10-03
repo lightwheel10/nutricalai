@@ -1,34 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getFirestore, Firestore } from 'firebase-admin/firestore';
-import { getAuth } from 'firebase-admin/auth';
-import { initializeApp, cert, getApps } from 'firebase-admin/app';
+import { createClient } from '@supabase/supabase-js';
 import Groq from 'groq-sdk';
 
-let db: Firestore | undefined;
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
-console.log('Starting Firebase initialization...');
-
-if (process.env.SERVICE_ACCOUNT_KEY) {
-  try {
-    const serviceAccount = JSON.parse(process.env.SERVICE_ACCOUNT_KEY);
-    if (!getApps().length) {
-      initializeApp({
-        credential: cert(serviceAccount),
-      });
-      console.log('Firebase app initialized successfully');
-    } else {
-      console.log('Firebase app already initialized');
-    }
-    db = getFirestore();
-    console.log('Firestore instance created');
-  } catch (error) {
-    console.error("Error initializing Firebase Admin SDK:", error);
-  }
-} else {
-  console.warn('SERVICE_ACCOUNT_KEY not set. Firebase Admin SDK not initialized.');
-}
-
-console.log('Firebase initialization process completed');
+console.log('Supabase client initialized');
 
 const schema = {
   type: "object",
@@ -67,14 +46,15 @@ export async function POST(req: NextRequest) {
   const token = authHeader.split(' ')[1];
 
   try {
-    if (!db) {
-      console.error('Firestore instance not available');
-      throw new Error('Firebase Admin SDK not initialized');
+    console.log("Verifying Supabase token...");
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    
+    if (error || !user) {
+      console.error("Error verifying token:", error);
+      return NextResponse.json({ status: 'error', message: 'Invalid token' }, { status: 401 });
     }
-
-    console.log("Verifying Firebase ID token...");
-    const decodedToken = await getAuth().verifyIdToken(token);
-    const userId = decodedToken.uid;
+    
+    const userId = user.id;
     console.log("Authenticated user:", userId);
 
     const groqApiKey = process.env.GROQ_API_KEY;
@@ -122,29 +102,34 @@ export async function POST(req: NextRequest) {
 
     if (mealDetails && Object.keys(mealDetails).length > 0) {
       const loggedAt = new Date().toISOString();
-      const userDocRef = db.collection('users').doc(userId).collection('meals').doc();
       const dataToStore = {
+        user_id: userId,
         input_text,
-        loggedBy,
-        loggedAt,
+        logged_by: loggedBy,
+        logged_at: loggedAt,
         quantity: mealDetails.quantity,
         insights: mealDetails.insights,
-        mealDetails: {
+        meal_details: {
           meal_name: mealDetails.meal_name,
           calories: mealDetails.calories,
           nutrients: mealDetails.nutrients,
           insights: mealDetails.insights,
         }
       };
-      console.log("Data being stored in Firestore:", dataToStore);
+      console.log("Data being stored in Supabase:", dataToStore);
       try {
-        await userDocRef.set(dataToStore);
-        console.log("Meal details saved to Firestore");
+        const { data, error } = await supabase
+          .from('meals')
+          .insert(dataToStore)
+          .select();
+        
+        if (error) throw error;
+        console.log("Meal details saved to Supabase");
+        return NextResponse.json({ status: 'success', meal_details: mealDetails, mealId: data[0].id });
       } catch (error) {
-        console.error("Error saving meal details to Firestore:", error);
+        console.error("Error saving meal details to Supabase:", error);
         return NextResponse.json({ status: 'error', message: 'Failed to save meal details to database' }, { status: 500 });
       }
-      return NextResponse.json({ status: 'success', meal_details: mealDetails, mealId: userDocRef.id });
     } else {
       console.error("Unexpected or empty response structure:", chatCompletion);
       return NextResponse.json({ status: 'error', message: 'Unexpected or empty response structure' }, { status: 400 });

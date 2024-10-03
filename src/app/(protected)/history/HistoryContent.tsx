@@ -8,8 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Coffee, Utensils, Pizza, Apple, ChevronRight, CalendarIcon, Clock, User, Bot, Tag, Flame, Scale, X, Edit, Trash } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, startOfDay, endOfDay, parseISO } from 'date-fns';
-import { auth, db } from '@/lib/firebase';
-import { doc, updateDoc, deleteDoc, collection, onSnapshot } from 'firebase/firestore';
+import { supabase } from '@/lib/supabase';
 import { Meal } from './types';
 import { EditMealDialog } from '@/components/dashboard/EditMealDialog';
 
@@ -25,37 +24,31 @@ const HistoryContent = () => {
 
   useEffect(() => {
     const fetchMeals = async () => {
-      if (!auth || !db) {
-        console.error("Firebase is not initialized");
-        return;
-      }
-
-      const user = auth.currentUser;
+      const { data: { user } } = await supabase.auth.getUser();
+      
       if (!user) {
         console.error("User not authenticated");
         return;
       }
 
-      console.log("Fetching meals for user:", user.uid);
-      const userMealsRef = collection(db, 'users', user.uid, 'meals');
-      const unsubscribe = onSnapshot(userMealsRef, (snapshot) => {
-        const meals = snapshot.docs.map(doc => {
-          const data = doc.data();
-          console.log("Fetched meal data:", data);
-          return {
-            id: doc.id,
-            ...data,
-            loggedAt: data.timestamp?.toDate().toISOString() || new Date().toISOString(),
-            mealDetails: data.mealDetails || {}
-          } as Meal;
-        });
-        console.log("Fetched meals from Firestore:", meals);
-        setMealHistory(meals);
-      }, (error) => {
-        console.error("Error fetching meals:", error);
-      });
+      console.log("Fetching meals for user:", user.id);
+      const { data, error } = await supabase
+        .from('meals')
+        .select('*')
+        .eq('user_id', user.id);
 
-      return () => unsubscribe();
+      if (error) {
+        console.error("Error fetching meals:", error);
+      } else if (data) {
+        console.log("Fetched meals from Supabase:", data);
+        const meals = data.map(meal => ({
+          id: meal.id,
+          ...meal,
+          loggedAt: meal.logged_at,
+          mealDetails: meal.meal_details || {}
+        } as Meal));
+        setMealHistory(meals);
+      }
     };
 
     fetchMeals();
@@ -116,26 +109,27 @@ const HistoryContent = () => {
   };
 
   const handleSaveEdit = async (updatedMeal: Meal) => {
-    if (!auth || !db) {
-      console.error("Firebase is not initialized");
-      return;
-    }
-
-    const user = auth.currentUser;
+    const { data: { user } } = await supabase.auth.getUser();
+    
     if (!user) {
       console.error("User not authenticated");
       return;
     }
 
     try {
-      const mealDocRef = doc(db, 'users', user.uid, 'meals', updatedMeal.id);
-      const updateData = {
-        input_text: updatedMeal.input_text,
-        loggedBy: updatedMeal.loggedBy,
-        loggedAt: updatedMeal.loggedAt,
-        mealDetails: updatedMeal.mealDetails
-      };
-      await updateDoc(mealDocRef, updateData);
+      const { error } = await supabase
+        .from('meals')
+        .update({
+          input_text: updatedMeal.input_text,
+          logged_by: updatedMeal.loggedBy,
+          logged_at: updatedMeal.loggedAt,
+          meal_details: updatedMeal.mealDetails
+        })
+        .eq('id', updatedMeal.id)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      
       setEditingMeal(null);
       setIsEditDialogOpen(false);
     } catch (error) {
@@ -144,19 +138,22 @@ const HistoryContent = () => {
   };
 
   const handleDeleteMeal = async (mealId: string) => {
-    if (!auth || !db) {
-      console.error("Firebase is not initialized");
-      return;
-    }
-
-    const user = auth.currentUser;
+    const { data: { user } } = await supabase.auth.getUser();
+    
     if (!user) {
       console.error("User not authenticated");
       return;
     }
 
     try {
-      await deleteDoc(doc(db, 'users', user.uid, 'meals', mealId));
+      const { error } = await supabase
+        .from('meals')
+        .delete()
+        .eq('id', mealId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      
       console.log("Meal deleted successfully");
     } catch (error) {
       console.error("Error deleting meal:", error);
