@@ -85,6 +85,7 @@ export default function LoginContent() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              className="text-black"
             />
           </div>
           <div>

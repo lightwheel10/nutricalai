@@ -22,30 +22,21 @@ export default function SignUpContent() {
     setIsLoading(true);
 
     try {
-      const { data, error } = await signUp(email, password);
+      const { error } = await signUp(email, password);
 
       if (error) throw error;
 
-      if (data.user) {
-        toast({
-          title: "Sign Up Successful",
-          description: "Please check your email to confirm your account.",
-          variant: "default",
-        });
-        router.push('/login');
-      } else {
-        throw new Error('Sign up failed. Please try again.');
-      }
+      router.push('/dashboard');
     } catch (error) {
       if (error instanceof Error) {
         toast({
-          title: "Sign Up Error",
+          title: "Signup Error",
           description: error.message,
           variant: "destructive",
         });
       } else {
         toast({
-          title: "Sign Up Error",
+          title: "Signup Error",
           description: "An unexpected error occurred",
           variant: "destructive",
         });

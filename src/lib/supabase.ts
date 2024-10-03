@@ -10,6 +10,12 @@ if (!supabaseUrl || !supabaseAnonKey) {
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 export async function signUp(email: string, password: string) {
+  if (!email || !password) {
+    return { error: { message: 'Email and password are required' } };
+  }
+  if (password.length < 6) {
+    return { error: { message: 'Password must be at least 6 characters long' } };
+  }
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
