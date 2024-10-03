@@ -18,6 +18,7 @@ export default function LoginContent() {
     setIsLoading(true);
     try {
       if (!auth) {
+        console.error('Firebase auth is not initialized');
         throw new Error('Firebase auth is not initialized');
       }
       const provider = new GoogleAuthProvider();
@@ -26,6 +27,10 @@ export default function LoginContent() {
       router.push('/dashboard');
     } catch (error) {
       console.error('Error signing in with Google:', error);
+      if (error instanceof Error) {
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+      }
       // TODO: Implement user-facing error handling
     } finally {
       setIsLoading(false);
