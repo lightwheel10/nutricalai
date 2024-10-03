@@ -1,5 +1,5 @@
 const getEnvVariable = (key: string): string => {
-  const value = process.env[key];
+  const value = process.env[key] || process.env[`NEXT_PUBLIC_${key}`];
   if (!value) {
     console.error(`Environment variable ${key} is not set`);
     return '';
