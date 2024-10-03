@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft, Lock } from 'lucide-react';
 import { FcGoogle } from 'react-icons/fc';
-import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { signInWithPopup, GoogleAuthProvider, Auth } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 
@@ -21,7 +21,7 @@ export default function LoginContent() {
         throw new Error('Firebase auth is not initialized');
       }
       const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth as Auth, provider);
       console.log('User signed in:', result.user);
       router.push('/dashboard');
     } catch (error) {
