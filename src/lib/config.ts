@@ -1,7 +1,7 @@
 const getEnvVariable = (key: string): string => {
-  const value = process.env[`NEXT_PUBLIC_${key}`] || process.env[key];
+  const value = process.env[key];
   if (!value) {
-    console.warn(`Environment variable ${key} is not set`);
+    console.error(`Environment variable ${key} is not set`);
     return '';
   }
   return value;
@@ -17,4 +17,5 @@ export const firebaseConfig = {
   measurementId: getEnvVariable('FIREBASE_MEASUREMENT_ID'),
 };
 
+console.log('Available environment variables:', Object.keys(process.env));
 console.log('Firebase Config:', firebaseConfig);

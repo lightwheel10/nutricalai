@@ -8,9 +8,17 @@ let app: FirebaseApp | undefined;
 let auth: Auth | undefined;
 let db: Firestore | undefined;
 
+const requiredConfigKeys = ['apiKey', 'authDomain', 'projectId', 'storageBucket'] as const;
+
 try {
   if (typeof window !== 'undefined' && !getApps().length) {
     console.log('Attempting to initialize Firebase with config:', JSON.stringify(firebaseConfig, null, 2));
+    
+    const missingKeys = requiredConfigKeys.filter(key => !firebaseConfig[key as keyof typeof firebaseConfig]);
+    if (missingKeys.length > 0) {
+      throw new Error(`Missing required Firebase configuration keys: ${missingKeys.join(', ')}`);
+    }
+
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
     db = getFirestore(app);
