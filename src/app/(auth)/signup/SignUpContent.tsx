@@ -22,25 +22,29 @@ export default function SignUpContent() {
     setIsLoading(true);
 
     try {
-      const { error } = await signUp(email, password);
+      const { data, error } = await signUp(email, password);
 
-      if (error) throw error;
-
-      router.push('/dashboard');
-    } catch (error) {
-      if (error instanceof Error) {
+      if (error) {
         toast({
           title: "Signup Error",
           description: error.message,
           variant: "destructive",
         });
-      } else {
+      } else if (data) {
         toast({
-          title: "Signup Error",
-          description: "An unexpected error occurred",
-          variant: "destructive",
+          title: "Signup Successful",
+          description: "Please check your email for verification.",
+          variant: "default",
         });
+        router.push('/login');
       }
+    } catch (error) {
+      console.error('Unexpected error during signup:', error);
+      toast({
+        title: "Signup Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
