@@ -33,10 +33,10 @@ export default function SignUpContent() {
       } else if (data) {
         toast({
           title: "Signup Successful",
-          description: "Please check your email for verification.",
+          description: "Welcome to the dashboard!",
           variant: "default",
         });
-        router.push('/login');
+        router.push('/dashboard');
       }
     } catch (error) {
       console.error('Unexpected error during signup:', error);

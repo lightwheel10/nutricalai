@@ -30,9 +30,9 @@ export default function ProfilePage() {
 //    as it allows the basic structure of the page to load quickly while the more complex parts
 //    are still being prepared.
 // 
-// 6. By setting 'ssr: false', we ensure that the ProfileContent component (which likely contains
-//    Firebase-related code) is only loaded on the client side. This is important for components
-//    that rely on browser-specific APIs or need to access client-side data.
+// 6. By setting 'ssr: false', we ensure that the ProfileContent component is only loaded on the 
+//    client side. This is important for components that rely on browser-specific APIs or need 
+//    to access client-side data.
 // 
 // This setup creates a more efficient and potentially faster-loading profile page, while keeping
 // the code organized, easier to manage, and compatible with client-side only operations.

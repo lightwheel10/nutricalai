@@ -22,15 +22,15 @@ export default function LoginPage() {
 // 
 // 3. Once the content is loaded, it displays the full login page with all its features.
 // 
-// 4. The actual login functionality (like the Google sign-in button) is now handled in a separate file
-//    called LoginContent.tsx. This helps keep this main page file simple and focused.
+// 4. The actual login functionality is now handled in a separate file called LoginContent.tsx. 
+//    This helps keep this main page file simple and focused.
 // 
 // 5. This approach can improve the app's performance, especially on slower internet connections,
 //    as it allows the basic structure of the page to load quickly while the more complex parts
 //    are still being prepared.
 // 
 // 6. The 'ssr: false' option ensures that the LoginContent component is only loaded on the client side.
-//    This is important for components that use Firebase, as Firebase should not be initialized on the server.
+//    This is important for components that may use client-side only features or APIs.
 // 
 // This setup creates a more efficient and potentially faster-loading login page, while keeping
-// the code organized and easier to manage, and ensures proper client-side loading of Firebase-related code.
+// the code organized and easier to manage, and ensures proper client-side loading of the login functionality.

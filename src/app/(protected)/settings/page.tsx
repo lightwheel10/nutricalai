@@ -26,11 +26,11 @@ export default function SettingsPage() {
 //    handled in a separate file called SettingsContent.tsx. This helps keep this main page file
 //    simple and focused.
 // 
-// 5. This approach improves the app's performance by ensuring that Firebase-related code is only
+// 5. This approach improves the app's performance by ensuring that client-side specific code is only
 //    loaded on the client side. This is achieved by setting 'ssr: false' in the dynamic import.
 // 
-// 6. Loading the Firebase-related content only on the client side helps avoid potential issues
-//    with server-side rendering, as Firebase is typically used for client-side operations.
+// 6. Loading the client-side specific content only on the client side helps avoid potential issues
+//    with server-side rendering, as some operations are typically used for client-side functionality.
 // 
 // This setup creates a more efficient and potentially faster-loading settings page, while keeping
-// the code organized, easier to manage, and compatible with client-side Firebase operations.
+// the code organized and easier to manage.

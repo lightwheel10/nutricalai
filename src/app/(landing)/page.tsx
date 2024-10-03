@@ -31,9 +31,8 @@ export default function LandingPage() {
 //    are still being prepared.
 // 
 // 6. By setting 'ssr: false', we ensure that the LandingContent component is only loaded on the
-//    client side. This is important for components that use Firebase or other browser-specific
-//    features, as it prevents issues with server-side rendering.
+//    client side. This is important for components that may use browser-specific features,
+//    as it prevents issues with server-side rendering.
 // 
 // This setup creates a more efficient and potentially faster-loading landing page, while keeping
-// the code organized and easier to manage, and ensures compatibility with client-side only
-// libraries like Firebase.
+// the code organized and easier to manage.
