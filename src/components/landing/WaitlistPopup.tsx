@@ -23,7 +23,7 @@ const WaitlistPopup: React.FC<WaitlistPopupProps> = ({ isOpen, onClose }) => {
 
     try {
       const { error } = await supabase
-        .from('waitlist')
+        .from('Waitlist Users')
         .insert([{ email }])
 
       if (error) throw error
