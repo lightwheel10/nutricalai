@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Coffee, Utensils, Pizza, Apple, ChevronRight, CalendarIcon, Clock, User, Bot, Tag, Flame, Scale, X, Edit, Trash } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, startOfDay, endOfDay, parseISO } from 'date-fns';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabaseClient';
 import { Meal } from './types';
 import { EditMealDialog } from '@/components/dashboard/EditMealDialog';
 

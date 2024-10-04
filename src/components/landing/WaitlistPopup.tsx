@@ -9,12 +9,10 @@ import { supabase } from '@/lib/supabaseClient'
 interface WaitlistPopupProps {
   isOpen: boolean
   onClose: () => void
-  email: string
-  setEmail: (email: string) => void
-  handleEmailSubmit: (e: React.FormEvent) => void
 }
 
-const WaitlistPopup: React.FC<WaitlistPopupProps> = ({ isOpen, onClose, email, setEmail, handleEmailSubmit }) => {
+const WaitlistPopup: React.FC<WaitlistPopupProps> = ({ isOpen, onClose }) => {
+  const [email, setEmail] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitMessage, setSubmitMessage] = useState('')
 
@@ -31,7 +29,7 @@ const WaitlistPopup: React.FC<WaitlistPopupProps> = ({ isOpen, onClose, email, s
       if (error) throw error
 
       setSubmitMessage('Thank you for joining our waitlist!')
-      handleEmailSubmit(e)
+      setEmail('')
     } catch (error) {
       console.error('Error submitting email:', error)
       setSubmitMessage('An error occurred. Please try again.')

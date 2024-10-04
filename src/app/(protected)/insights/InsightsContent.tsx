@@ -9,7 +9,7 @@ import { ResponsiveContainer, PieChart, Pie, Cell, Legend, Tooltip } from 'recha
 import { motion } from 'framer-motion'
 import { DashboardCard } from '@/components/dashboard/dashboard-card'
 import { NutrientProgress } from '@/components/dashboard/nutrient-progress'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/lib/supabaseClient'
 import { calculateMacronutrients, calculateMicronutrients } from '@/utils/nutrientCalculations';
 import Overview from '@/components/insight/overview'
 

@@ -18,7 +18,7 @@ import { Meal } from '../history/types';
 import { useRouter } from 'next/navigation';
 import { calculateMacronutrients, calculateMicronutrients } from '@/utils/nutrientCalculations';
 import { prepareCalorieTrendData } from '@/utils/prepareChartData';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabaseClient';
 
 interface User {
   id: string;

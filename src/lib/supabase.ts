@@ -1,13 +1,8 @@
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from './supabaseClient'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+export { supabase }
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables')
-}
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// Use the imported supabase instance for all operations
 
 export async function signUp(email: string, password: string) {
   if (!email || !password) {

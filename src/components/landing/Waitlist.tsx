@@ -17,7 +17,7 @@ const Waitlist: React.FC = () => {
 
     try {
       const { error } = await supabase
-        .from('waitlist')
+        .from('Waitlist Users')
         .insert([{ email }])
 
       if (error) throw error

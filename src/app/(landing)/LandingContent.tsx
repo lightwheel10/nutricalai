@@ -22,7 +22,6 @@ const avatarUrls = [
 
 export default function LandingContent() {
   const [isScrolled, setIsScrolled] = useState(false)
-  const [email, setEmail] = useState('')
   const [isWaitlistOpen, setIsWaitlistOpen] = useState(false)
 
   useEffect(() => {
@@ -38,13 +37,6 @@ export default function LandingContent() {
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' })
     }
-  }
-
-  const handleEmailSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log('Email submitted:', email)
-    setEmail('')
-    setIsWaitlistOpen(false)
   }
 
   const openWaitlist = () => setIsWaitlistOpen(true)
@@ -183,9 +175,6 @@ export default function LandingContent() {
       <WaitlistPopup
         isOpen={isWaitlistOpen}
         onClose={closeWaitlist}
-        email={email}
-        setEmail={setEmail}
-        handleEmailSubmit={handleEmailSubmit}
       />
     </div>
   )

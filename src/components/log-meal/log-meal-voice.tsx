@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Mic } from 'lucide-react'
 import axios from 'axios'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/lib/supabaseClient'
 
 interface LogMealVoiceProps {
   onLogMeal: (input: string) => void
