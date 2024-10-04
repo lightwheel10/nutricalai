@@ -22,16 +22,30 @@ const WaitlistPopup: React.FC<WaitlistPopupProps> = ({ isOpen, onClose }) => {
     setSubmitMessage('')
 
     try {
+      // Insert email into Supabase
       const { error } = await supabase
         .from('Waitlist-Users')
         .insert([{ email }])
 
       if (error) throw error
 
+      // Send email using the new API route
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send email');
+      }
+
       setSubmitMessage('Thank you for joining our waitlist!')
       setEmail('')
     } catch (error) {
-      console.error('Error submitting email:', error)
+      console.error('Error:', error)
       setSubmitMessage('An error occurred. Please try again.')
     } finally {
       setIsSubmitting(false)
