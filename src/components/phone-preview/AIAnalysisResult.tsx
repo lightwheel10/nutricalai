@@ -4,7 +4,17 @@ import { motion } from 'framer-motion'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 import { LightbulbIcon, UtensilsIcon, PillIcon, BrainIcon } from 'lucide-react'
 
-export function AIAnalysisResult() {
+interface AIAnalysisResultProps {
+  mealDetails: {
+    meal_name: string;
+    calories: number;
+    nutrients: Array<{ name: string; amount: number; unit: string }>;
+    insights: string;
+    quantity: string;
+  }
+}
+
+export function AIAnalysisResult({ mealDetails }: AIAnalysisResultProps) {
   const macroData = [
     { name: 'Protein', value: 36, color: '#4CAF50' },
     { name: 'Carbs', value: 18, color: '#2196F3' },
@@ -51,14 +61,14 @@ export function AIAnalysisResult() {
       </motion.div>
 
       <div className="px-4 flex-grow overflow-y-auto">
-        <motion.h2 variants={itemVariants} className="text-base font-semibold text-blue-600 mb-1">Grilled chicken salad with avocado</motion.h2>
-        <motion.p variants={itemVariants} className="text-xs text-gray-600 mb-3">Quantity: 1 large bowl (approx. 400g)</motion.p>
+        <motion.h2 variants={itemVariants} className="text-base font-semibold text-blue-600 mb-1">{mealDetails.meal_name}</motion.h2>
+        <motion.p variants={itemVariants} className="text-xs text-gray-600 mb-3">Quantity: {mealDetails.quantity}</motion.p>
 
         <motion.div variants={itemVariants} className="mb-4">
           <h3 className="text-sm font-semibold mb-1 flex items-center">
             <UtensilsIcon className="w-4 h-4 mr-1" /> Calorie Breakdown
           </h3>
-          <p className="text-xs mb-2">Total Calories: 450 kcal</p>
+          <p className="text-xs mb-2">Total Calories: {mealDetails.calories} kcal</p>
           <div className="flex items-center">
             <ResponsiveContainer width="50%" height={100}>
               <PieChart>
@@ -116,7 +126,7 @@ export function AIAnalysisResult() {
           <LightbulbIcon className="w-4 h-4 mr-1 text-blue-600" />
           <h3 className="text-xs font-semibold">AI Insight:</h3>
         </div>
-        <p className="text-xs">High in protein and healthy fats. Consider adding whole grains for balance.</p>
+        <p className="text-xs">{mealDetails.insights}</p>
       </motion.div>
     </motion.div>
   )
