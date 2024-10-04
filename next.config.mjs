@@ -15,7 +15,7 @@ const nextConfig = {
     return config;
   },
   images: {
-    domains: ['nextjs.org'], // Add this line to allow images from nextjs.org
+    domains: ['nextjs.org', 'avatars.githubusercontent.com'], // Add this line to allow images from nextjs.org
   },
 };
 
