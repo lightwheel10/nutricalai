@@ -45,7 +45,6 @@ export default function LandingContent() {
     console.log('Email submitted:', email)
     setEmail('')
     setIsWaitlistOpen(false)
-    alert('Thank you for joining our waitlist!')
   }
 
   const openWaitlist = () => setIsWaitlistOpen(true)
@@ -175,7 +174,7 @@ export default function LandingContent() {
           </div>
         </section>
 
-        <Waitlist email={email} setEmail={setEmail} handleEmailSubmit={handleEmailSubmit} />
+        <Waitlist />
 
         <TestimonialMarquee />
 

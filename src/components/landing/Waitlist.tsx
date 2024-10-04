@@ -1,15 +1,37 @@
+import { useState } from 'react'
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Mail } from "lucide-react"
+import { supabase } from '@/lib/supabaseClient'
 
-interface WaitlistProps {
-  email: string;
-  setEmail: (email: string) => void;
-  handleEmailSubmit: (e: React.FormEvent) => void;
-}
+const Waitlist: React.FC = () => {
+  const [email, setEmail] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitMessage, setSubmitMessage] = useState('')
 
-const Waitlist: React.FC<WaitlistProps> = ({ email, setEmail, handleEmailSubmit }) => {
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    setSubmitMessage('')
+
+    try {
+      const { error } = await supabase
+        .from('waitlist')
+        .insert([{ email }])
+
+      if (error) throw error
+
+      setSubmitMessage('Thank you for joining our waitlist!')
+      setEmail('')
+    } catch (error) {
+      console.error('Error submitting email:', error)
+      setSubmitMessage('An error occurred. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <section id="waitlist" className="w-full py-24 md:py-32 lg:py-48">
       <div className="container px-4 md:px-6">
@@ -40,11 +62,15 @@ const Waitlist: React.FC<WaitlistProps> = ({ email, setEmail, handleEmailSubmit 
               <Button 
                 type="submit" 
                 className="bg-gray-900 text-white hover:bg-gray-800 whitespace-nowrap w-32"
+                disabled={isSubmitting}
               >
                 <Mail className="w-4 h-4 mr-2" />
-                Join Now
+                {isSubmitting ? 'Joining...' : 'Join Now'}
               </Button>
             </form>
+            {submitMessage && (
+              <p className="mt-2 text-sm text-green-600">{submitMessage}</p>
+            )}
           </div>
         </motion.div>
       </div>

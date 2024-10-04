@@ -1,9 +1,10 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { X } from 'lucide-react'
 import Link from 'next/link'
+import { supabase } from '@/lib/supabaseClient'
 
 interface WaitlistPopupProps {
   isOpen: boolean
@@ -14,6 +15,31 @@ interface WaitlistPopupProps {
 }
 
 const WaitlistPopup: React.FC<WaitlistPopupProps> = ({ isOpen, onClose, email, setEmail, handleEmailSubmit }) => {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitMessage, setSubmitMessage] = useState('')
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    setSubmitMessage('')
+
+    try {
+      const { error } = await supabase
+        .from('waitlist')
+        .insert([{ email }])
+
+      if (error) throw error
+
+      setSubmitMessage('Thank you for joining our waitlist!')
+      handleEmailSubmit(e)
+    } catch (error) {
+      console.error('Error submitting email:', error)
+      setSubmitMessage('An error occurred. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -38,7 +64,7 @@ const WaitlistPopup: React.FC<WaitlistPopupProps> = ({ isOpen, onClose, email, s
               </Button>
             </div>
             <p className="mb-4 text-gray-600">Be the first to experience our groundbreaking features. Sign up for our waitlist today!</p>
-            <form onSubmit={handleEmailSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <Input 
                 placeholder="Enter your email" 
                 type="email" 
@@ -50,10 +76,14 @@ const WaitlistPopup: React.FC<WaitlistPopupProps> = ({ isOpen, onClose, email, s
               <Button 
                 type="submit" 
                 className="w-full bg-gray-900 text-white hover:bg-gray-800"
+                disabled={isSubmitting}
               >
-                Join Waitlist
+                {isSubmitting ? 'Submitting...' : 'Join Waitlist'}
               </Button>
             </form>
+            {submitMessage && (
+              <p className="mt-4 text-center text-sm text-green-600">{submitMessage}</p>
+            )}
             <div className="mt-4 text-center">
               <p className="text-sm text-gray-600">Already have access?</p>
               <Link href="/login" className="text-sm text-blue-600 hover:text-blue-800">
