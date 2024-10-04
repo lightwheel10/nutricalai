@@ -9,9 +9,9 @@ export async function POST(req: NextRequest) {
 
   try {
     const data = await resend.emails.send({
-      from: 'Your App <onboarding@resend.dev>',
+      from: 'Nutrical AI <onboarding@nutricalai.com>',
       to: email,
-      subject: 'Welcome to our Waitlist!',
+      subject: 'Welcome to the Nutrical AI Waitlist!',
       react: WaitlistWelcomeEmail(),
     })
 
