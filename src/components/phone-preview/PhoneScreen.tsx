@@ -24,13 +24,12 @@ export function PhoneScreen() {
   const handleTextSubmit = async () => {
     setStage('loading')
     try {
-      const response = await fetch('/api/log_meal', {
+      const response = await fetch('/api/landing_ai', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}` // Assuming you store the token in localStorage
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ input_text: mealInput, loggedBy: 'text' })
+        body: JSON.stringify({ input_text: mealInput })
       })
       const data = await response.json()
       if (data.status === 'success') {
@@ -40,7 +39,7 @@ export function PhoneScreen() {
         throw new Error(data.message)
       }
     } catch (error) {
-      console.error('Error logging meal:', error)
+      console.error('Error analyzing meal:', error)
       // Handle error (e.g., show error message to user)
     }
   }
