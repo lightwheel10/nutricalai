@@ -1,21 +1,55 @@
+import { useState } from "react"
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Switch } from "@/components/ui/switch"
 
 interface PricingPlan {
   name: string;
-  price: string;
+  monthlyPrice: string;
+  annualPrice: string;
   features: string[];
 }
 
 const plans: PricingPlan[] = [
-  { name: "Basic", price: "$9.99/mo", features: ["AI calorie tracking", "Basic insights", "7-day meal planning"] },
-  { name: "Pro", price: "$19.99/mo", features: ["Everything in Basic", "Advanced insights", "30-day meal planning", "24/7 support"] },
+  {
+    name: "Standard",
+    monthlyPrice: "$7/mo",
+    annualPrice: "$5/mo",
+    features: [
+      "AI calorie tracking",
+      "Detailed insights",
+      "7-day free trial",
+      "Premium support"
+    ]
+  },
+  {
+    name: "Lifetime",
+    monthlyPrice: "$150",
+    annualPrice: "$150",
+    features: [
+      "AI calorie tracking",
+      "Detailed insights",
+      "7-day free trial",
+      "Premium support",
+      "One-time payment"
+    ]
+  }
 ]
 
 const Pricing: React.FC = () => {
+  const [isAnnual, setIsAnnual] = useState(false)
+
   return (
     <section className="py-16 px-6">
       <h2 className="text-3xl font-bold text-center mb-8">Pricing Plans</h2>
+      <div className="flex justify-center items-center mb-8">
+        <span className={`mr-2 ${!isAnnual ? 'font-bold' : ''}`}>Monthly</span>
+        <Switch
+          checked={isAnnual}
+          onCheckedChange={setIsAnnual}
+        />
+        <span className={`ml-2 ${isAnnual ? 'font-bold' : ''}`}>Annually</span>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
         {plans.map((plan, index) => (
           <Card key={index} className="flex flex-col">
@@ -23,7 +57,10 @@ const Pricing: React.FC = () => {
               <CardTitle>{plan.name}</CardTitle>
             </CardHeader>
             <CardContent className="flex-grow">
-              <p className="text-2xl font-bold mb-4">{plan.price}</p>
+              <p className="text-2xl font-bold mb-4">
+                {isAnnual ? plan.annualPrice : plan.monthlyPrice}
+                {plan.name !== "Lifetime" && <span className="text-sm font-normal"> billed {isAnnual ? 'annually' : 'monthly'}</span>}
+              </p>
               <ul className="list-disc list-inside">
                 {plan.features.map((feature, i) => (
                   <li key={i}>{feature}</li>
