@@ -38,12 +38,7 @@ const Features: React.FC = () => {
             >
               <Card className="bg-white border border-gray-200 h-full">
                 <CardHeader>
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                  >
-                    <feature.icon className="w-10 h-10 mb-2 text-gray-900" />
-                  </motion.div>
+                  <feature.icon className="w-10 h-10 mb-2 text-gray-900" />
                   <CardTitle className="text-2xl">{feature.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
