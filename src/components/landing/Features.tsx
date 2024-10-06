@@ -1,11 +1,23 @@
 import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { BarChart, Zap, Users } from "lucide-react"
+import { Mic, Brain, Calculator } from "lucide-react"
 
 const features = [
-  { title: "Image Recognition", description: "Instantly recognize foods and calculate calories from photos of your meals.", icon: BarChart },
-  { title: "Personalized Insights", description: "Get AI-driven recommendations for your diet based on your goals and habits.", icon: Zap },
-  { title: "Smart Meal Planning", description: "Receive customized meal plans that fit your calorie goals and dietary preferences.", icon: Users }
+  { 
+    title: "Natural Language Input", 
+    description: "Easily log your meals using text or voice in everyday language, like 'I had salmon for dinner with some rice'.", 
+    icon: Mic 
+  },
+  { 
+    title: "AI-Powered Analysis", 
+    description: "Our advanced AI calculates macros, micros, and calories from your natural language input.", 
+    icon: Brain 
+  },
+  { 
+    title: "Comprehensive Nutrition Tracking", 
+    description: "Get detailed insights into your diet, including calorie count, macronutrients, and micronutrients.", 
+    icon: Calculator 
+  }
 ]
 
 const Features: React.FC = () => {
@@ -22,10 +34,16 @@ const Features: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
+              whileHover={{ y: -5 }}
             >
-              <Card className="bg-white border border-gray-200">
+              <Card className="bg-white border border-gray-200 h-full">
                 <CardHeader>
-                  <feature.icon className="w-10 h-10 mb-2 text-gray-900" />
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                  >
+                    <feature.icon className="w-10 h-10 mb-2 text-gray-900" />
+                  </motion.div>
                   <CardTitle className="text-2xl">{feature.title}</CardTitle>
                 </CardHeader>
                 <CardContent>

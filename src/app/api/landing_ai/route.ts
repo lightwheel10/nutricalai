@@ -26,8 +26,8 @@ const schema = {
 
 export async function POST(req: NextRequest) {
   console.log("POST request received in landing_ai route");
-  const { input_text } = await req.json();
-  console.log("Received request in landing_ai:", { input_text });
+  const { input_text, input_audio } = await req.json();
+  console.log("Received request in landing_ai:", { input_text, input_audio: input_audio ? 'Audio data received' : 'No audio data' });
 
   const groqApiKey = process.env.GROQ_API_KEY;
 
@@ -41,6 +41,14 @@ export async function POST(req: NextRequest) {
   });
 
   try {
+    let userContent = input_text;
+
+    if (input_audio) {
+      // Here you would typically send the audio to a speech-to-text service
+      // For this example, we'll simulate it with a placeholder
+      userContent = "Simulated transcription of audio input";
+    }
+
     const chatCompletion = await groq.chat.completions.create({
       messages: [
         {
@@ -51,7 +59,7 @@ export async function POST(req: NextRequest) {
         },
         {
           role: "user",
-          content: `Parse the following meal input and provide nutritional information in JSON format, strictly adhering to the given schema: ${input_text}`,
+          content: `Parse the following meal input and provide nutritional information in JSON format, strictly adhering to the given schema: ${userContent}`,
         },
       ],
       model: "llama-3.1-70b-versatile",

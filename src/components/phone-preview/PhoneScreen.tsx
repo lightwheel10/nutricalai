@@ -15,9 +15,35 @@ export function PhoneScreen() {
 
   const handleLogMeal = () => setStage('options')
   const handleStartRecording = () => setStage('recording')
-  const handleStopRecording = () => {
+  const handleStopRecording = async (audioBlob: Blob) => {
     setStage('loading')
-    setTimeout(() => setStage('result'), 1000) // Simulate API call
+    try {
+      // Convert audio blob to base64
+      const reader = new FileReader()
+      reader.readAsDataURL(audioBlob)
+      reader.onloadend = async () => {
+        const base64Audio = reader.result as string
+        const base64Data = base64Audio.split(',')[1]
+
+        const response = await fetch('/api/landing_ai', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ input_audio: base64Data })
+        })
+        const data = await response.json()
+        if (data.status === 'success') {
+          setMealDetails(data.meal_details)
+          setStage('result')
+        } else {
+          throw new Error(data.message)
+        }
+      }
+    } catch (error) {
+      console.error('Error analyzing meal:', error)
+      // Handle error (e.g., show error message to user)
+    }
   }
   const handleTextLog = () => setStage('text-input')
 
