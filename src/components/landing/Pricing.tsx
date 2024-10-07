@@ -45,7 +45,7 @@ const Pricing: React.FC = () => {
   const closeWaitlist = () => setIsWaitlistOpen(false)
 
   return (
-    <section className="py-16 px-6">
+    <section id="pricing" className="w-full py-12 md:py-24 lg:py-32">
       <h2 className="text-3xl font-bold text-center mb-8">Pricing Plans</h2>
       <div className="flex justify-center items-center mb-8">
         <span className={`mr-2 ${!isAnnual ? 'font-bold' : ''}`}>Monthly</span>

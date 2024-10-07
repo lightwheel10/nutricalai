@@ -13,6 +13,8 @@ import TestimonialMarquee from '@/components/landing/TestimonialMarquee'
 import AvatarCircles from "@/components/landing/AvatarCircles";
 import { PhoneScreen } from '@/components/phone-preview/PhoneScreen';
 import Footer from '@/components/landing/Footer';
+import Image from 'next/image';
+import logoImage from './nutrical-ai-logo.png'  //
 
 const avatarUrls = [
   "https://avatars.githubusercontent.com/u/16860528",
@@ -87,13 +89,16 @@ export default function LandingContent() {
     <div className="flex flex-col min-h-screen bg-white text-gray-900">
       <header className={`px-4 lg:px-6 h-16 flex items-center fixed top-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-white/80 backdrop-blur-md shadow-sm' : 'bg-white'}`}>
         <Link className="flex items-center justify-center" href="#">
-          <motion.div
-            initial={{ rotate: 0 }}
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            className="w-8 h-8 border-2 border-gray-900 rounded-full"
-          />
-          <span className="ml-2 text-xl font-bold">AI Calorie Tracker</span>
+          <div className="w-10 h-10 relative mr-3">
+            <Image
+              src={logoImage}
+              alt="Nutrical AI Logo"
+              width={40}
+              height={40}
+              className="object-contain"
+            />
+          </div>
+          <span className="text-xl font-bold">Nutrical AI</span>
         </Link>
         <nav className="ml-auto flex gap-4 sm:gap-6">
           <Button variant="ghost" onClick={() => scrollTo('features')}>Features</Button>
@@ -146,7 +151,7 @@ export default function LandingContent() {
                   Effortless Calorie Tracking
                 </h2>
                 <p className="text-gray-600 md:text-xl">
-                  Our AI-powered app makes calorie tracking a breeze. Simply take a photo of your meal, and let our advanced algorithms do the rest.
+                  Our AI-powered app makes calorie tracking a breeze. Simply tell the AI what you had for your meal, and let our advanced algorithms do the rest.
                 </p>
                 <Button className="bg-gray-900 text-white hover:bg-gray-800" onClick={openWaitlist}>
                   Join Waitlist for Early Access
