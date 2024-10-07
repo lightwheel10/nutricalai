@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
+import WaitlistPopup from "./WaitlistPopup"
 
 interface PricingPlan {
   name: string;
@@ -38,6 +39,10 @@ const plans: PricingPlan[] = [
 
 const Pricing: React.FC = () => {
   const [isAnnual, setIsAnnual] = useState(false)
+  const [isWaitlistOpen, setIsWaitlistOpen] = useState(false)
+
+  const openWaitlist = () => setIsWaitlistOpen(true)
+  const closeWaitlist = () => setIsWaitlistOpen(false)
 
   return (
     <section className="py-16 px-6">
@@ -68,11 +73,12 @@ const Pricing: React.FC = () => {
               </ul>
             </CardContent>
             <CardFooter>
-              <Button className="w-full">Choose Plan</Button>
+              <Button className="w-full" onClick={openWaitlist}>Choose Plan</Button>
             </CardFooter>
           </Card>
         ))}
       </div>
+      <WaitlistPopup isOpen={isWaitlistOpen} onClose={closeWaitlist} />
     </section>
   )
 }
