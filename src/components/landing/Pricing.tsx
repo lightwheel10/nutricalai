@@ -55,7 +55,7 @@ const Pricing: React.FC = () => {
         />
         <span className={`ml-2 ${isAnnual ? 'font-bold' : ''}`}>Annually</span>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+      <div className="flex flex-col gap-6 max-w-md mx-auto">
         {plans.map((plan, index) => (
           <Card key={index} className="flex flex-col">
             <CardHeader>

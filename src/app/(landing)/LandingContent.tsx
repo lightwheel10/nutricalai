@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { ArrowRight } from "lucide-react"
 import { motion } from "framer-motion"
-import { ArrowRight, Circle } from "lucide-react"
 import Features from '@/components/landing/Features'
 import Waitlist from '@/components/landing/Waitlist'
 import WaitlistPopup from '@/components/landing/WaitlistPopup'
@@ -12,6 +12,7 @@ import Pricing from '@/components/landing/Pricing'
 import TestimonialMarquee from '@/components/landing/TestimonialMarquee'
 import AvatarCircles from "@/components/landing/AvatarCircles";
 import { PhoneScreen } from '@/components/phone-preview/PhoneScreen';
+import Footer from '@/components/landing/Footer';
 
 const avatarUrls = [
   "https://avatars.githubusercontent.com/u/16860528",
@@ -20,9 +21,49 @@ const avatarUrls = [
   "https://avatars.githubusercontent.com/u/59228569",
 ];
 
+const steps = [
+  {
+    number: "1",
+    title: "Log Your Meal",
+    description: "Use voice, text, or photo to easily log your meals.",
+  },
+  {
+    number: "2",
+    title: "AI Analysis",
+    description: "Our AI recognizes the food and calculates calories, macros, and micros.",
+  },
+  {
+    number: "3",
+    title: "Track Progress",
+    description: "Monitor your calorie intake and nutritional balance effortlessly.",
+  },
+]
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.3,
+    },
+  },
+}
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.5,
+    },
+  },
+}
+
 export default function LandingContent() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isWaitlistOpen, setIsWaitlistOpen] = useState(false)
+  // const [activeStep, setActiveStep] = useState(0)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -115,9 +156,9 @@ export default function LandingContent() {
                 <div className="w-full rounded-lg overflow-hidden shadow-2xl">
                   <div className="bg-gray-800 p-2 flex items-center">
                     <div className="flex space-x-2">
-                      <Circle size={12} className="text-red-500" />
-                      <Circle size={12} className="text-yellow-500" />
-                      <Circle size={12} className="text-green-500" />
+                      <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                      <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                      <div className="w-3 h-3 rounded-full bg-green-500"></div>
                     </div>
                     <div className="flex-1 flex justify-center">
                       <div className="bg-gray-700 rounded px-2 py-1 text-xs text-gray-300">
@@ -138,31 +179,30 @@ export default function LandingContent() {
 
         <section className="w-full py-24 md:py-32 lg:py-48 bg-gray-50">
           <div className="container px-4 md:px-6">
-            <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl text-center mb-12">
-              How It Works
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {[
-                { title: "Take a Photo", description: "Snap a picture of your meal using our app." },
-                { title: "AI Analysis", description: "Our AI instantly recognizes the food and calculates calories." },
-                { title: "Track Progress", description: "Monitor your calorie intake and nutritional balance effortlessly." }
-              ].map((step, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="flex flex-col items-center text-center"
+            <h2 className="text-4xl font-bold text-center mb-16">How It Works</h2>
+            <motion.div 
+              className="flex flex-col md:flex-row justify-between items-start max-w-6xl mx-auto"
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              {steps.map((step, index) => (
+                <motion.div 
+                  key={index} 
+                  className="flex flex-col items-center mb-8 md:mb-0 md:w-1/3 text-center relative"
+                  variants={itemVariants}
                 >
-                  <div className="w-12 h-12 rounded-full bg-gray-900 text-white flex items-center justify-center text-xl font-bold mb-4">
-                    {index + 1}
+                  <div className="w-16 h-16 bg-gray-900 text-white rounded-full flex items-center justify-center text-xl font-bold mb-4">
+                    {step.number}
                   </div>
                   <h3 className="text-xl font-semibold mb-2">{step.title}</h3>
-                  <p className="text-gray-600">{step.description}</p>
-                  {index < 2 && <ArrowRight className="w-6 h-6 mt-4 text-gray-400 hidden md:block" />}
+                  <p className="text-gray-600 mb-4">{step.description}</p>
+                  {index < steps.length - 1 && (
+                    <ArrowRight className="hidden md:block text-gray-400 absolute top-1/2 -right-4 transform -translate-y-1/2" />
+                  )}
                 </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
         </section>
 
@@ -176,6 +216,8 @@ export default function LandingContent() {
         isOpen={isWaitlistOpen}
         onClose={closeWaitlist}
       />
+
+      <Footer />
     </div>
   )
 }
