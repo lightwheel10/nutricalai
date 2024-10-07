@@ -1,8 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import Image from 'next/image'
+import Link from 'next/link'
+import logoImage from './nutrical-ai-logo.png'
 import { Button } from "@/components/ui/button"
-import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { motion } from "framer-motion"
 import Features from '@/components/landing/Features'
@@ -13,8 +15,14 @@ import TestimonialMarquee from '@/components/landing/TestimonialMarquee'
 import AvatarCircles from "@/components/landing/AvatarCircles";
 import { PhoneScreen } from '@/components/phone-preview/PhoneScreen';
 import Footer from '@/components/landing/Footer';
-import Image from 'next/image';
-import logoImage from './nutrical-ai-logo.png'  //
+
+declare global {
+  interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    $crisp?: any;
+    CRISP_WEBSITE_ID?: string;
+  }
+}
 
 const avatarUrls = [
   "https://avatars.githubusercontent.com/u/16860528",
@@ -65,7 +73,6 @@ const itemVariants = {
 export default function LandingContent() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isWaitlistOpen, setIsWaitlistOpen] = useState(false)
-  // const [activeStep, setActiveStep] = useState(0)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -74,6 +81,32 @@ export default function LandingContent() {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  useEffect(() => {
+    // Crisp chat script
+    window.$crisp = [];
+    window.CRISP_WEBSITE_ID = "26f1ae60-b2b2-4824-ad62-15559384c1f5";
+    
+    const d = document;
+    const s = d.createElement("script");
+    s.src = "https://client.crisp.chat/l.js";
+    s.async = true;
+    d.getElementsByTagName("head")[0].appendChild(s);
+
+    // Cleanup function to remove the script when component unmounts
+    return () => {
+      const script = d.querySelector('script[src="https://client.crisp.chat/l.js"]');
+      if (script) {
+        script.remove();
+      }
+      if (window.$crisp) {
+        window.$crisp = undefined;
+      }
+      if (window.CRISP_WEBSITE_ID) {
+        window.CRISP_WEBSITE_ID = undefined;
+      }
+    };
+  }, []);
 
   const scrollTo = (id: string) => {
     const element = document.getElementById(id)
