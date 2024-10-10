@@ -69,24 +69,26 @@ const InsightsContent = () => {
       // Calculate total calories consumed for today
       const today = new Date().toISOString().split('T')[0];
       const todayCalories = meals
-        .filter(meal => meal.logged_at.startsWith(today))
-        .reduce((sum, meal) => sum + (meal.meal_details.calories || 0), 0);
+        .filter(meal => meal.logged_at && meal.logged_at.startsWith(today))
+        .reduce((sum, meal) => sum + (meal.meal_details?.calories || 0), 0);
       setCaloriesConsumed(todayCalories);
 
       // Calculate macronutrients for today
-      const macros = calculateMacronutrients(meals.filter(meal => meal.logged_at.startsWith(today)));
+      const macros = calculateMacronutrients(meals.filter(meal => meal.logged_at && meal.logged_at.startsWith(today)));
       console.log("Macros:", macros); // Debugging log
       setMacroData(macros);
 
       // Calculate micronutrients for today
-      const micros = calculateMicronutrients(meals.filter(meal => meal.logged_at.startsWith(today)));
+      const micros = calculateMicronutrients(meals.filter(meal => meal.logged_at && meal.logged_at.startsWith(today)));
       console.log("Micros:", micros); // Debugging log
-      setMicroData(prevMicroData => ({
-        ...prevMicroData,
-        ...Object.fromEntries(
-          Object.entries(micros).map(([key, value]) => [key, { value, max: prevMicroData[key as keyof MicroData].max }])
-        )
-      }));
+      setMicroData(prevMicroData => {
+        return Object.fromEntries(
+          Object.entries(prevMicroData).map(([key, data]) => [
+            key,
+            { ...data, value: micros[key as keyof typeof micros] || data.value }
+          ])
+        ) as MicroData;
+      });
     };
 
     fetchMeals();
@@ -205,7 +207,7 @@ const InsightsContent = () => {
             <CardContent>
               <div className="space-y-4 h-48">
                 {Object.entries(microData)
-                  .filter(([name]) => !['Protein', 'Fat', 'Carbohydrates'].includes(name))
+                  .filter(([name, data]) => !['Protein', 'Fat', 'Carbohydrates'].includes(name) && data !== undefined)
                   .map(([name, { value, max }]) => (
                     <NutrientProgress 
                       key={name} 

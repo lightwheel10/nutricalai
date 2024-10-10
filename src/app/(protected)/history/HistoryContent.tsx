@@ -41,12 +41,14 @@ const HistoryContent = () => {
         console.error("Error fetching meals:", error);
       } else if (data) {
         console.log("Fetched meals from Supabase:", data);
-        const meals = data.map(meal => ({
-          id: meal.id,
-          ...meal,
-          loggedAt: meal.logged_at,
-          mealDetails: meal.meal_details || {}
-        } as Meal));
+        const meals = data.map(meal => (
+          {
+            id: meal.id,
+            ...meal,
+            logged_at: meal.logged_at,
+            meal_details: meal.meal_details || {}
+          } as Meal
+        ));
         setMealHistory(meals);
       }
     };
@@ -55,12 +57,12 @@ const HistoryContent = () => {
   }, []);
 
   const filteredMeals = mealHistory.filter(meal => {
-    const mealDate = meal.loggedAt ? parseISO(meal.loggedAt) : null;
+    const mealDate = meal.logged_at ? parseISO(meal.logged_at) : null;
     return (
       (!startDate || (mealDate && mealDate >= startOfDay(startDate))) &&
       (!endDate || (mealDate && mealDate <= endOfDay(endDate))) &&
-      (mealTypeFilter === 'all' || meal.mealDetails.mealType?.toLowerCase() === mealTypeFilter) &&
-      (loggedByFilter === 'all' || meal.loggedBy?.toLowerCase() === loggedByFilter)
+      (mealTypeFilter === 'all' || meal.meal_details.mealType?.toLowerCase() === mealTypeFilter) &&
+      (loggedByFilter === 'all' || meal.logged_by?.toLowerCase() === loggedByFilter)
     );
   });
 
@@ -121,9 +123,9 @@ const HistoryContent = () => {
         .from('meals')
         .update({
           input_text: updatedMeal.input_text,
-          logged_by: updatedMeal.loggedBy,
-          logged_at: updatedMeal.loggedAt,
-          meal_details: updatedMeal.mealDetails
+          logged_by: updatedMeal.logged_by,
+          logged_at: updatedMeal.logged_at,
+          meal_details: updatedMeal.meal_details
         })
         .eq('id', updatedMeal.id)
         .eq('user_id', user.id);
@@ -209,8 +211,8 @@ const HistoryContent = () => {
       <ScrollArea className="h-[calc(100vh-200px)]">
         <AnimatePresence>
           {filteredMeals.map((meal, index) => {
-            const mealDetails = meal.mealDetails || {};
-            const mealDate = meal.loggedAt ? new Date(meal.loggedAt) : null;
+            const mealDetails = meal.meal_details || {};
+            const mealDate = meal.logged_at ? new Date(meal.logged_at) : null;
             const formattedDate = mealDate ? format(mealDate, 'yyyy-MM-dd') : 'N/A';
             const formattedTime = mealDate ? format(mealDate, 'HH:mm:ss') : 'N/A';
 
@@ -279,12 +281,12 @@ const HistoryContent = () => {
                       </div>
                     </div>
                     <div className="mt-2 flex items-center space-x-2 text-sm text-gray-500">
-                      {meal.loggedBy === 'human' ? (
+                      {meal.logged_by === 'human' ? (
                         <User className="h-4 w-4" />
                       ) : (
                         <Bot className="h-4 w-4" />
                       )}
-                      <span>Logged by {meal.loggedBy || 'N/A'}</span>
+                      <span>Logged by {meal.logged_by || 'N/A'}</span>
                     </div>
                     <AnimatePresence>
                       {selectedMeal === index && (
@@ -298,8 +300,8 @@ const HistoryContent = () => {
                           <h3 className="font-semibold mb-2 text-blue-700">Detailed Information</h3>
                           <p className="text-gray-700">Macronutrients:</p>
                           <ul className="list-disc list-inside">
-                            {meal.mealDetails.nutrients && meal.mealDetails.nutrients.length > 0 ? (
-                              meal.mealDetails.nutrients
+                            {meal.meal_details.nutrients && meal.meal_details.nutrients.length > 0 ? (
+                              meal.meal_details.nutrients
                                 .filter(nutrient => ['Carbohydrates', 'Protein', 'Fat'].includes(nutrient.name))
                                 .map((nutrient, idx) => (
                                   <li key={idx} className="text-gray-700">
@@ -312,8 +314,8 @@ const HistoryContent = () => {
                           </ul>
                           <p className="text-gray-700 mt-2">Micronutrients:</p>
                           <ul className="list-disc list-inside">
-                            {meal.mealDetails.nutrients && meal.mealDetails.nutrients.length > 0 ? (
-                              meal.mealDetails.nutrients
+                            {meal.meal_details.nutrients && meal.meal_details.nutrients.length > 0 ? (
+                              meal.meal_details.nutrients
                                 .filter(nutrient => !['Carbohydrates', 'Protein', 'Fat'].includes(nutrient.name))
                                 .map((nutrient, idx) => (
                                   <li key={idx} className="text-gray-700">
@@ -325,7 +327,7 @@ const HistoryContent = () => {
                             )}
                           </ul>
                           <div className="mt-2 text-sm text-gray-500">
-                            <span>Insights: {meal.mealDetails.insights || 'No insights available'}</span>
+                            <span>Insights: {meal.meal_details.insights || 'No insights available'}</span>
                           </div>
                         </motion.div>
                       )}

@@ -9,14 +9,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Sun, Moon, CreditCard, HelpCircle, Settings } from 'lucide-react'
+import { Sun, Moon, CreditCard, HelpCircle} from 'lucide-react'
+import { DollarSign } from 'lucide-react'
 
 interface UserDropdownProps {
   theme: 'light' | 'dark'
   onThemeChange: (theme: 'light' | 'dark') => void
+  setActiveTab: (tab: string) => void
 }
 
-const UserDropdown: React.FC<UserDropdownProps> = ({ theme, onThemeChange }) => {
+const UserDropdown: React.FC<UserDropdownProps> = ({ theme, onThemeChange, setActiveTab }) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -37,19 +39,6 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ theme, onThemeChange }) => 
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          <CreditCard className="mr-2 h-4 w-4" />
-          <span>Billing</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem>
-          <Settings className="mr-2 h-4 w-4" />
-          <span>Pricing</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem>
-          <HelpCircle className="mr-2 h-4 w-4" />
-          <span>Contact Us</span>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => onThemeChange(theme === 'light' ? 'dark' : 'light')}>
           {theme === 'light' ? (
             <Sun className="mr-2 h-4 w-4" />
@@ -57,6 +46,18 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ theme, onThemeChange }) => 
             <Moon className="mr-2 h-4 w-4" />
           )}
           <span>Switch to {theme === 'light' ? 'Dark' : 'Light'} Theme</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setActiveTab('billing')}>
+          <CreditCard className="mr-2 h-4 w-4" />
+          <span>Billing</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setActiveTab('pricing')}>
+          <DollarSign className="mr-2 h-4 w-4" />
+          <span>Pricing</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setActiveTab('contact')}>
+          <HelpCircle className="mr-2 h-4 w-4" />
+          <span>Contact Us</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

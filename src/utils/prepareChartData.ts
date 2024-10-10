@@ -16,9 +16,9 @@ export const prepareCalorieTrendData = (meals: Meal[]) => {
 
   // Sum up calories for each day
   meals.forEach(meal => {
-    const mealDate = new Date(meal.loggedAt).toISOString().split('T')[0];
+    const mealDate = new Date(meal.logged_at).toISOString().split('T')[0];
     if (mealDate in dailyCalories) {
-      dailyCalories[mealDate] += meal.mealDetails.calories || 0;
+      dailyCalories[mealDate] += meal.meal_details.calories || 0;
     }
   });
 

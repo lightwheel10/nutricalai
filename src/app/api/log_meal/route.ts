@@ -106,14 +106,15 @@ export async function POST(req: NextRequest) {
         user_id: userId,
         input_text,
         logged_by: loggedBy,
-        logged_at: loggedAt,
+        logged_at: loggedAt, // Ensure this is always set
         quantity: mealDetails.quantity,
-        insights: mealDetails.insights,
         meal_details: {
           meal_name: mealDetails.meal_name,
           calories: mealDetails.calories,
           nutrients: mealDetails.nutrients,
           insights: mealDetails.insights,
+          quantity: mealDetails.quantity,
+          mealType: mealDetails.mealType || 'unspecified'
         }
       };
       console.log("Data being stored in Supabase:", dataToStore);
@@ -125,7 +126,7 @@ export async function POST(req: NextRequest) {
         
         if (error) throw error;
         console.log("Meal details saved to Supabase");
-        return NextResponse.json({ status: 'success', meal_details: mealDetails, mealId: data[0].id });
+        return NextResponse.json({ status: 'success', meal_details: dataToStore.meal_details, mealId: data[0].id });
       } catch (error) {
         console.error("Error saving meal details to Supabase:", error);
         return NextResponse.json({ status: 'error', message: 'Failed to save meal details to database' }, { status: 500 });

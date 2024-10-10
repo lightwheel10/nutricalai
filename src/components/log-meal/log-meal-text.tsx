@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 import { supabase } from '@/lib/supabaseClient';
 
 interface LogMealTextProps {
-  onLogMeal: (mealDetails: { meal_name: string; calories: number; nutrients: { name: string; amount: number; unit: string }[]; insights: string; quantity: string }) => void;
+  onLogMeal: (mealDetails: { meal_name: string; calories: number; nutrients: { name: string; amount: number; unit: string }[]; insights: string; quantity: string; mealType: string }) => void;
 }
 
 export function LogMealText({ onLogMeal }: LogMealTextProps) {
@@ -20,9 +20,9 @@ export function LogMealText({ onLogMeal }: LogMealTextProps) {
     setIsLoading(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
 
-      if (!user) {
+      if (!session) {
         setError('You must be logged in to log a meal.');
         return;
       }
@@ -31,6 +31,7 @@ export function LogMealText({ onLogMeal }: LogMealTextProps) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({ input_text: mealInput, loggedBy: 'AI' }),
       });

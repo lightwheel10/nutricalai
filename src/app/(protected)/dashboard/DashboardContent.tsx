@@ -19,6 +19,9 @@ import { useRouter } from 'next/navigation';
 import { calculateMacronutrients, calculateMicronutrients } from '@/utils/nutrientCalculations';
 import { prepareCalorieTrendData } from '@/utils/prepareChartData';
 import { supabase } from '@/lib/supabaseClient';
+import BillingContent from '../billing/page';
+import PricingContent from '../pricing/page';
+import ContactContent from '../contact/page';
 
 interface User {
   id: string;
@@ -87,14 +90,14 @@ const DashboardContent = () => {
       
       const today = new Date().toISOString().split('T')[0];
       const todayCalories = meals
-        .filter((meal: Meal) => meal.loggedAt.startsWith(today))
-        .reduce((sum: number, meal: Meal) => sum + (meal.mealDetails.calories || 0), 0);
+        .filter((meal: Meal) => meal.logged_at && meal.logged_at.startsWith(today))
+        .reduce((sum: number, meal: Meal) => sum + (meal.meal_details?.calories || 0), 0);
       setCaloriesConsumed(todayCalories);
 
-      const macros = calculateMacronutrients(meals.filter((meal: Meal) => meal.loggedAt.startsWith(today)));
+      const macros = calculateMacronutrients(meals.filter((meal: Meal) => meal.logged_at && meal.logged_at.startsWith(today)));
       setMacroData(macros);
 
-      const micros = calculateMicronutrients(meals.filter((meal: Meal) => meal.loggedAt.startsWith(today)));
+      const micros = calculateMicronutrients(meals.filter((meal: Meal) => meal.logged_at && meal.logged_at.startsWith(today)));
       setMicroData(micros);
     };
 
@@ -269,6 +272,12 @@ const DashboardContent = () => {
         return <ActivityPage />;
       case 'settings':
         return <SettingsPage />;
+      case 'billing':
+        return <BillingContent />;
+      case 'pricing':
+        return <PricingContent />;
+      case 'contact':
+        return <ContactContent />;
       default:
         return null;
     }
@@ -331,6 +340,7 @@ const DashboardContent = () => {
           currentPage={activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
           theme={theme}
           onThemeChange={setTheme}
+          setActiveTab={setActiveTab}
         />
         <div className="p-8">
           {renderContent()}

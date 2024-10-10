@@ -15,7 +15,7 @@ import { Meal } from '../app/(protected)/history/types';
 export const calculateMacronutrients = (meals: Meal[]) => {
   const macros = { Carbohydrates: 0, Protein: 0, Fat: 0 };
   meals.forEach(meal => {
-    meal.mealDetails.nutrients?.forEach(nutrient => {
+    meal.meal_details.nutrients?.forEach((nutrient: { name: string; amount: number }) => {
       if (nutrient.name in macros) {
         macros[nutrient.name as keyof typeof macros] += nutrient.amount;
       }
@@ -48,7 +48,7 @@ export const calculateMicronutrients = (meals: Meal[]): { [key: string]: { value
   const micros: { [key: string]: { value: number; max: number } } = {};
 
   meals.forEach(meal => {
-    meal.mealDetails.nutrients?.forEach(nutrient => {
+    meal.meal_details.nutrients?.forEach((nutrient: { name: string; amount: number }) => {
       if (!micros[nutrient.name]) {
         micros[nutrient.name] = { value: 0, max: 100 }; // Default max value, adjust as needed
       }

@@ -14,8 +14,17 @@ export interface Nutrient {
   
   export interface Meal {
     id: string;
+    user_id: string;
     input_text: string;
-    loggedBy: string;
-    loggedAt: string;
-    mealDetails: MealDetails;
+    logged_by: string;
+    logged_at: string;
+    quantity: string;
+    meal_details: {
+      meal_name: string;
+      calories: number;
+      nutrients: Array<{ name: string; amount: number; unit: string }>;
+      insights: string;
+      quantity: string;
+      mealType: string;
+    };
   }
