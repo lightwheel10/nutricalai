@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { TrendingUp, Dumbbell, Droplet, Activity, History, BarChart, Settings, LogOut, ChevronLeft, ChevronRight, Filter, Flame, PieChart as PieChartIcon } from 'lucide-react';
+import { TrendingUp, Dumbbell, Droplet, Activity, History, BarChart, Settings, LogOut, ChevronLeft, ChevronRight, Flame, PieChart as PieChartIcon } from 'lucide-react';
 import { DashboardCard } from '@/components/dashboard/dashboard-card';
 import { NutrientProgress } from '@/components/dashboard/nutrient-progress';
 import DashboardHeader from '@/components/dashboard/dashboard-header';
@@ -34,10 +34,9 @@ const DashboardContent = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [mealHistory, setMealHistory] = useState<Meal[]>([]);
+  const [todayMeals, setTodayMeals] = useState<Meal[]>([]);
   const [caloriesConsumed, setCaloriesConsumed] = useState(0);
   const calorieGoal = 2200;
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [macroData, setMacroData] = useState([
     { name: 'Carbs', value: 0 },
@@ -52,7 +51,8 @@ const DashboardContent = () => {
     'Sugar': { value: 0, max: 50 },
     'Sodium': { value: 0, max: 2300 }
   });
-  const [dashboardTimeFrame, setDashboardTimeFrame] = useState('today');
+  const [trendMealHistory, setTrendMealHistory] = useState<Meal[]>([]);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -71,40 +71,63 @@ const DashboardContent = () => {
     const fetchMeals = async () => {
       if (!user) return;
 
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+      const today = new Date().toISOString().split('T')[0];
 
-      const { data: meals, error } = await supabase
+      // Fetch today's meals for dashboard cards
+      const { data: todayMealsData, error: todayError } = await supabase
         .from('meals')
         .select('*')
         .eq('user_id', user.id)
-        .gte('logged_at', sevenDaysAgo.toISOString())
+        .gte('logged_at', today)
         .order('logged_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching meals:', error);
+      if (todayError) {
+        console.error('Error fetching today\'s meals:', todayError);
         return;
       }
 
-      setMealHistory(meals as Meal[]);
+      setTodayMeals(todayMealsData as Meal[]);
       
-      const today = new Date().toISOString().split('T')[0];
-      const todayCalories = meals
-        .filter((meal: Meal) => meal.logged_at && meal.logged_at.startsWith(today))
+      const todayCalories = todayMealsData
         .reduce((sum: number, meal: Meal) => sum + (meal.meal_details?.calories || 0), 0);
       setCaloriesConsumed(todayCalories);
 
-      const macros = calculateMacronutrients(meals.filter((meal: Meal) => meal.logged_at && meal.logged_at.startsWith(today)));
-      setMacroData(macros);
+      setMacroData(calculateMacronutrients(todayMealsData));
+      setMicroData(calculateMicronutrients(todayMealsData));
 
-      const micros = calculateMicronutrients(meals.filter((meal: Meal) => meal.logged_at && meal.logged_at.startsWith(today)));
-      setMicroData(micros);
+      // Fetch meals for the past week for the trend chart
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+      const oneWeekAgoStr = oneWeekAgo.toISOString().split('T')[0];
+
+      const { data: trendMeals, error: trendError } = await supabase
+        .from('meals')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('logged_at', oneWeekAgoStr)
+        .order('logged_at', { ascending: true });
+
+      if (trendError) {
+        console.error('Error fetching trend meals:', trendError);
+        return;
+      }
+
+      setTrendMealHistory(trendMeals as Meal[]);
     };
 
     if (user) {
       fetchMeals();
     }
-  }, [user, dashboardTimeFrame]);
+  }, [user]);
+
+  // Add this useEffect to update derived states when todayMeals changes
+  useEffect(() => {
+    const todayCalories = todayMeals.reduce((sum, meal) => sum + (meal.meal_details?.calories || 0), 0);
+    setCaloriesConsumed(todayCalories);
+
+    setMacroData(calculateMacronutrients(todayMeals));
+    setMicroData(calculateMicronutrients(todayMeals));
+  }, [todayMeals]);
 
   const handleLogMealVoice = (input: string) => {
     console.log("Logging meal via voice:", input);
@@ -121,22 +144,6 @@ const DashboardContent = () => {
       case 'dashboard':
         return (
           <>
-            <div className="flex justify-end mb-8">
-              <div className="relative">
-                <select
-                  value={dashboardTimeFrame}
-                  onChange={(e) => setDashboardTimeFrame(e.target.value)}
-                  className="appearance-none block w-48 p-2 pr-8 border border-black rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                >
-                  <option value="today">Today</option>
-                  <option value="7days">Last 7 Days</option>
-                  <option value="30days">Last 30 Days</option>
-                  <option value="month">This Month</option>
-                  <option value="year">This Year</option>
-                </select>
-                <Filter className="absolute right-2 top-1/2 transform -translate-y-1/2 h-5 w-5 text-black" />
-              </div>
-            </div>
             <div className="space-y-8">
               <DashboardCard
                 title="Calorie Intake"
@@ -235,7 +242,7 @@ const DashboardContent = () => {
                 content={
                   <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={prepareCalorieTrendData(mealHistory)}>
+                      <LineChart data={prepareCalorieTrendData(trendMealHistory)}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis 
                           dataKey="date" 
