@@ -1,22 +1,23 @@
 'use client'
 
-// Import necessary dependencies and components
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Flame } from 'lucide-react'
-import { ResponsiveContainer, PieChart, Pie, Cell, Legend, Tooltip } from 'recharts'
+import { Flame, Footprints, Weight as WeightIcon, Activity } from 'lucide-react'
+import { ResponsiveContainer, PieChart, Pie, Cell, Legend, Tooltip, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts'
 import { motion } from 'framer-motion'
 import { DashboardCard } from '@/components/dashboard/dashboard-card'
 import { NutrientProgress } from '@/components/dashboard/nutrient-progress'
 import { supabase } from '@/lib/supabaseClient'
-import { calculateMacronutrients, calculateMicronutrients } from '@/utils/nutrientCalculations';
+import { calculateMacronutrients, calculateMicronutrients } from '@/utils/nutrientCalculations'
 import Overview from '@/components/insight/overview'
+import { Button } from "@/components/ui/button"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar as CalendarComponent } from "@/components/ui/calendar"
+import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, format } from 'date-fns'
 
-// Define colors for the pie chart
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28']
 
-// Define the structure for micronutrient data
 interface MicroData {
   'Vitamin C': { value: number; max: number };
   'Iron': { value: number; max: number };
@@ -26,9 +27,7 @@ interface MicroData {
   'Sodium': { value: number; max: number };
 }
 
-// Main component for displaying insights
 const InsightsContent = () => {
-  // State variables to store various nutritional data
   const [caloriesConsumed, setCaloriesConsumed] = useState(0)
   const calorieGoal = 2200
   const [macroData, setMacroData] = useState([
@@ -44,43 +43,48 @@ const InsightsContent = () => {
     'Sugar': { value: 0, max: 50 },
     'Sodium': { value: 0, max: 2300 }
   })
+  const [weightData, setWeightData] = useState<{ date: string; weight: number }[]>([])
+  const [stepsData, setStepsData] = useState<{ date: string; steps: number }[]>([])
+  const [latestActivity, setLatestActivity] = useState({ workout: '', quantity: '' })
 
-  // Effect hook to fetch and process meal data
+  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
+    from: startOfDay(new Date()),
+    to: endOfDay(new Date())
+  })
+
+  const [timePeriod, setTimePeriod] = useState<'day' | 'week' | 'month' | 'custom'>('day')
+
+  const [selectedTab, setSelectedTab] = useState("overview")
+
   useEffect(() => {
-    const fetchMeals = async () => {
-      // Fetch user data
+    const fetchData = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
         console.error("User not authenticated");
         return;
       }
 
-      // Fetch meals for the user
-      const { data: meals, error } = await supabase
+      // Fetch meals
+      const { data: meals, error: mealsError } = await supabase
         .from('meals')
         .select('*')
         .eq('user_id', user.id)
+        .gte('logged_at', dateRange.from.toISOString())
+        .lte('logged_at', dateRange.to.toISOString())
 
-      if (error) {
-        console.error("Error fetching meals:", error);
+      if (mealsError) {
+        console.error("Error fetching meals:", mealsError);
         return;
       }
 
-      // Calculate total calories consumed for today
-      const today = new Date().toISOString().split('T')[0];
-      const todayCalories = meals
-        .filter(meal => meal.logged_at && meal.logged_at.startsWith(today))
-        .reduce((sum, meal) => sum + (meal.meal_details?.calories || 0), 0);
-      setCaloriesConsumed(todayCalories);
+      // Calculate nutritional data
+      const totalCalories = meals.reduce((sum, meal) => sum + (meal.meal_details?.calories || 0), 0);
+      setCaloriesConsumed(totalCalories);
 
-      // Calculate macronutrients for today
-      const macros = calculateMacronutrients(meals.filter(meal => meal.logged_at && meal.logged_at.startsWith(today)));
-      console.log("Macros:", macros); // Debugging log
+      const macros = calculateMacronutrients(meals);
       setMacroData(macros);
 
-      // Calculate micronutrients for today
-      const micros = calculateMicronutrients(meals.filter(meal => meal.logged_at && meal.logged_at.startsWith(today)));
-      console.log("Micros:", micros); // Debugging log
+      const micros = calculateMicronutrients(meals);
       setMicroData(prevMicroData => {
         return Object.fromEntries(
           Object.entries(prevMicroData).map(([key, data]) => [
@@ -89,26 +93,94 @@ const InsightsContent = () => {
           ])
         ) as MicroData;
       });
+
+      // Fetch activities
+      const { data: activities, error: activitiesError } = await supabase
+        .from('activities')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('date', dateRange.from.toISOString())
+        .lte('date', dateRange.to.toISOString())
+        .order('date', { ascending: true })
+
+      if (activitiesError) {
+        console.error("Error fetching activities:", activitiesError);
+        return;
+      }
+
+      const weightHistory = activities.map(activity => ({
+        date: format(new Date(activity.date), 'yyyy-MM-dd'),
+        weight: activity.weight
+      }));
+
+      const stepsHistory = activities.map(activity => ({
+        date: format(new Date(activity.date), 'yyyy-MM-dd'),
+        steps: activity.steps
+      }));
+
+      setWeightData(weightHistory);
+      setStepsData(stepsHistory);
+
+      if (activities.length > 0 && activities[0].workout) {
+        setLatestActivity({
+          workout: activities[0].workout,
+          quantity: activities[0].workout_quantity || ''
+        });
+      }
     };
 
-    fetchMeals();
+    fetchData();
 
-    // Set up real-time subscription for meal updates
     const mealSubscription = supabase
       .channel('meals')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'meals' }, fetchMeals)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'meals' }, fetchData)
       .subscribe()
 
-    // Cleanup function to remove the subscription
+    const activitySubscription = supabase
+      .channel('activities')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'activities' }, fetchData)
+      .subscribe()
+
     return () => {
       supabase.removeChannel(mealSubscription)
+      supabase.removeChannel(activitySubscription)
     };
-  }, []);
+  }, [dateRange]);
+
+  const handleTimePeriodChange = (period: 'day' | 'week' | 'month' | 'custom') => {
+    const today = new Date();
+    let from, to;
+
+    switch (period) {
+      case 'day':
+        from = startOfDay(today);
+        to = endOfDay(today);
+        break;
+      case 'week':
+        from = startOfWeek(today);
+        to = endOfWeek(today);
+        break;
+      case 'month':
+        from = startOfMonth(today);
+        to = endOfMonth(today);
+        break;
+      case 'custom':
+        // Don't change the date range for custom, just update the timePeriod state
+        setTimePeriod(period);
+        return;
+    }
+
+    setDateRange({ from, to });
+    setTimePeriod(period);
+  };
+
+  const showTimePeriodOptions = (tab: string) => {
+    return ['weight', 'calories', 'macros', 'micros'].includes(tab);
+  };
 
   return (
     <div className="p-4">
-      {/* Tabs for different sections of insights */}
-      <Tabs defaultValue="overview">
+      <Tabs defaultValue="overview" onValueChange={setSelectedTab}>
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="weight">Weight</TabsTrigger>
@@ -118,12 +190,78 @@ const InsightsContent = () => {
           <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
 
-        {/* Overview tab content */}
+        {showTimePeriodOptions(selectedTab) && (
+          <div className="mb-4 flex space-x-2">
+            <Button 
+              onClick={() => handleTimePeriodChange('day')} 
+              variant={timePeriod === 'day' ? 'default' : 'outline'}
+              className="text-black hover:text-white"
+            >
+              Day
+            </Button>
+            <Button 
+              onClick={() => handleTimePeriodChange('week')} 
+              variant={timePeriod === 'week' ? 'default' : 'outline'}
+              className="text-black hover:text-white"
+            >
+              Week
+            </Button>
+            <Button 
+              onClick={() => handleTimePeriodChange('month')} 
+              variant={timePeriod === 'month' ? 'default' : 'outline'}
+              className="text-black hover:text-white"
+            >
+              Month
+            </Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant={timePeriod === 'custom' ? 'default' : 'outline'}
+                  className="text-black hover:text-white"
+                >
+                  Custom
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <CalendarComponent
+                  mode="range"
+                  selected={dateRange}
+                  onSelect={(range) => {
+                    if (range?.from && range?.to) {
+                      setDateRange({ from: range.from, to: range.to });
+                      setTimePeriod('custom');
+                    }
+                  }}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+        )}
+
         <TabsContent value="overview">
           <Overview />
         </TabsContent>
 
-        {/* Calories tab content */}
+        <TabsContent value="weight">
+          <Card>
+            <CardHeader>
+              <CardTitle>Weight History</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={weightData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="weight" stroke="#8884d8" />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="calories">
           <Card>
             <CardHeader>
@@ -157,7 +295,6 @@ const InsightsContent = () => {
           </Card>
         </TabsContent>
 
-        {/* Macronutrients tab content */}
         <TabsContent value="macros">
           <Card>
             <CardHeader>
@@ -198,7 +335,6 @@ const InsightsContent = () => {
           </Card>
         </TabsContent>
 
-        {/* Micronutrients tab content */}
         <TabsContent value="micros">
           <Card>
             <CardHeader>
@@ -221,14 +357,26 @@ const InsightsContent = () => {
           </Card>
         </TabsContent>
 
-        {/* Activity tab content (placeholder) */}
         <TabsContent value="activity">
           <Card>
             <CardHeader>
               <CardTitle>Activity Summary</CardTitle>
             </CardHeader>
             <CardContent>
-              {/* Add activity summary content here */}
+              <div className="space-y-4">
+                <div className="flex items-center">
+                  <Footprints className="h-5 w-5 mr-2" />
+                  <span>Latest Steps: {stepsData[stepsData.length - 1]?.steps || 0}</span>
+                </div>
+                <div className="flex items-center">
+                  <Activity className="h-5 w-5 mr-2" />
+                  <span>Latest Workout: {latestActivity.workout} {latestActivity.quantity}</span>
+                </div>
+                <div className="flex items-center">
+                  <WeightIcon className="h-5 w-5 mr-2" />
+                  <span>Latest Weight: {weightData[weightData.length - 1]?.weight || 0} kg</span>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -238,22 +386,3 @@ const InsightsContent = () => {
 }
 
 export default InsightsContent
-
-{/* 
-  For Non-Technical Readers:
-  
-  This component, InsightsContent, is responsible for displaying various health and nutrition insights to the user. 
-  It includes several sections:
-
-  1. Overview: A general summary of the user's health data.
-  2. Weight: (Not implemented in this code snippet) Likely to show weight trends.
-  3. Calories: Shows the user's calorie intake for the day compared to their goal.
-  4. Macros: Displays the breakdown of macronutrients (carbs, protein, fat) in a pie chart.
-  5. Micros: Shows the user's intake of various micronutrients (vitamins and minerals) compared to recommended values.
-  6. Activity: (Not implemented in this code snippet) Likely to show physical activity data.
-
-  The component fetches the user's meal data from a database and calculates various nutritional metrics. 
-  It then presents this information in an easy-to-understand format using charts and progress bars.
-
-  This tool can help users track their nutrition and make informed decisions about their diet and health.
-*/}
