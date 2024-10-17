@@ -1,98 +1,57 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from "react"
+import { BarChart as BarChartIcon, LineChart as LineChartIcon, AreaChart as AreaChartIcon, Weight, Footprints, Utensils, ChevronDown, ChevronRight } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Flame, Footprints, Weight as WeightIcon, Activity } from 'lucide-react'
-import { ResponsiveContainer, PieChart, Pie, Cell, Legend, Tooltip, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts'
-import { motion } from 'framer-motion'
-import { DashboardCard } from '@/components/dashboard/dashboard-card'
-import { NutrientProgress } from '@/components/dashboard/nutrient-progress'
-import { supabase } from '@/lib/supabaseClient'
-import { calculateMacronutrients, calculateMicronutrients } from '@/utils/nutrientCalculations'
-import Overview from '@/components/insight/overview'
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import { ResponsiveContainer, AreaChart, Area, BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis } from "recharts"
 import { Button } from "@/components/ui/button"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar as CalendarComponent } from "@/components/ui/calendar"
-import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, format } from 'date-fns'
+import { Input } from "@/components/ui/input"
+import { format, addDays, startOfDay, endOfDay } from "date-fns"
+import { supabase } from '@/lib/supabaseClient'
+import { calculateMacronutrients } from '@/utils/nutrientCalculations'
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28']
+interface InsightsData {
+  date: string
+  weight: number
+  steps: number
+  calories: number
+}
 
-interface MicroData {
-  'Vitamin C': { value: number; max: number };
-  'Iron': { value: number; max: number };
-  'Calcium': { value: number; max: number };
-  'Fiber': { value: number; max: number };
-  'Sugar': { value: number; max: number };
-  'Sodium': { value: number; max: number };
+const chartColors = {
+  weight: "#FF6B6B",
+  calories: "#4ECDC4",
+  steps: "#45B7D1",
+  protein: "#FFA07A",
+  carbs: "#98FB98",
+  fat: "#DDA0DD",
 }
 
 const InsightsContent = () => {
-  const [caloriesConsumed, setCaloriesConsumed] = useState(0)
-  const calorieGoal = 2200
-  const [macroData, setMacroData] = useState([
-    { name: 'Carbs', value: 0 },
-    { name: 'Protein', value: 0 },
-    { name: 'Fat', value: 0 },
-  ])
-  const [microData, setMicroData] = useState<MicroData>({
-    'Vitamin C': { value: 0, max: 90 },
-    'Iron': { value: 0, max: 18 },
-    'Calcium': { value: 0, max: 1000 },
-    'Fiber': { value: 0, max: 30 },
-    'Sugar': { value: 0, max: 50 },
-    'Sodium': { value: 0, max: 2300 }
-  })
-  const [weightData, setWeightData] = useState<{ date: string; weight: number }[]>([])
-  const [stepsData, setStepsData] = useState<{ date: string; steps: number }[]>([])
-  const [latestActivity, setLatestActivity] = useState({ workout: '', quantity: '' })
-
-  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
-    from: startOfDay(new Date()),
+  const [dateRange, setDateRange] = useState({
+    from: startOfDay(addDays(new Date(), -7)),
     to: endOfDay(new Date())
   })
-
-  const [timePeriod, setTimePeriod] = useState<'day' | 'week' | 'month' | 'custom'>('day')
-
-  const [selectedTab, setSelectedTab] = useState("overview")
+  const [insightsData, setInsightsData] = useState<InsightsData[]>([])
+  const [macrosData, setMacrosData] = useState([
+    { name: "Protein", value: 0 },
+    { name: "Carbs", value: 0 },
+    { name: "Fat", value: 0 },
+  ])
+  const [weightChartType, setWeightChartType] = useState("line")
+  const [stepsChartType, setStepsChartType] = useState("bar")
+  const [caloriesChartType, setCaloriesChartType] = useState("area")
+  const [detailedView, setDetailedView] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!dateRange.from || !dateRange.to) return
+
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
-        console.error("User not authenticated");
-        return;
+        console.error("User not authenticated")
+        return
       }
-
-      // Fetch meals
-      const { data: meals, error: mealsError } = await supabase
-        .from('meals')
-        .select('*')
-        .eq('user_id', user.id)
-        .gte('logged_at', dateRange.from.toISOString())
-        .lte('logged_at', dateRange.to.toISOString())
-
-      if (mealsError) {
-        console.error("Error fetching meals:", mealsError);
-        return;
-      }
-
-      // Calculate nutritional data
-      const totalCalories = meals.reduce((sum, meal) => sum + (meal.meal_details?.calories || 0), 0);
-      setCaloriesConsumed(totalCalories);
-
-      const macros = calculateMacronutrients(meals);
-      setMacroData(macros);
-
-      const micros = calculateMicronutrients(meals);
-      setMicroData(prevMicroData => {
-        return Object.fromEntries(
-          Object.entries(prevMicroData).map(([key, data]) => [
-            key,
-            { ...data, value: micros[key as keyof typeof micros] || data.value }
-          ])
-        ) as MicroData;
-      });
 
       // Fetch activities
       const { data: activities, error: activitiesError } = await supabase
@@ -104,283 +63,209 @@ const InsightsContent = () => {
         .order('date', { ascending: true })
 
       if (activitiesError) {
-        console.error("Error fetching activities:", activitiesError);
-        return;
+        console.error("Error fetching activities:", activitiesError)
+        return
       }
 
-      const weightHistory = activities.map(activity => ({
-        date: format(new Date(activity.date), 'yyyy-MM-dd'),
-        weight: activity.weight
-      }));
+      // Fetch meals
+      const { data: meals, error: mealsError } = await supabase
+        .from('meals')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('logged_at', dateRange.from.toISOString())
+        .lte('logged_at', dateRange.to.toISOString())
 
-      const stepsHistory = activities.map(activity => ({
-        date: format(new Date(activity.date), 'yyyy-MM-dd'),
-        steps: activity.steps
-      }));
-
-      setWeightData(weightHistory);
-      setStepsData(stepsHistory);
-
-      if (activities.length > 0 && activities[0].workout) {
-        setLatestActivity({
-          workout: activities[0].workout,
-          quantity: activities[0].workout_quantity || ''
-        });
+      if (mealsError) {
+        console.error("Error fetching meals:", mealsError)
+        return
       }
-    };
 
-    fetchData();
+      // Process data
+      const processedData: InsightsData[] = activities.map(activity => ({
+        date: format(new Date(activity.date), 'yyyy-MM-dd'),
+        weight: activity.weight,
+        steps: activity.steps,
+        calories: meals
+          .filter(meal => format(new Date(meal.logged_at), 'yyyy-MM-dd') === format(new Date(activity.date), 'yyyy-MM-dd'))
+          .reduce((sum, meal) => sum + (meal.meal_details?.calories || 0), 0)
+      }))
 
-    const mealSubscription = supabase
-      .channel('meals')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'meals' }, fetchData)
-      .subscribe()
+      setInsightsData(processedData)
 
-    const activitySubscription = supabase
-      .channel('activities')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'activities' }, fetchData)
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(mealSubscription)
-      supabase.removeChannel(activitySubscription)
-    };
-  }, [dateRange]);
-
-  const handleTimePeriodChange = (period: 'day' | 'week' | 'month' | 'custom') => {
-    const today = new Date();
-    let from, to;
-
-    switch (period) {
-      case 'day':
-        from = startOfDay(today);
-        to = endOfDay(today);
-        break;
-      case 'week':
-        from = startOfWeek(today);
-        to = endOfWeek(today);
-        break;
-      case 'month':
-        from = startOfMonth(today);
-        to = endOfMonth(today);
-        break;
-      case 'custom':
-        // Don't change the date range for custom, just update the timePeriod state
-        setTimePeriod(period);
-        return;
+      const macros = calculateMacronutrients(meals)
+      setMacrosData(macros)
     }
 
-    setDateRange({ from, to });
-    setTimePeriod(period);
-  };
+    fetchData()
+  }, [dateRange])
 
-  const showTimePeriodOptions = (tab: string) => {
-    return ['weight', 'calories', 'macros', 'micros'].includes(tab);
-  };
+  const toggleDetailedView = (category: string) => {
+    setDetailedView(detailedView === category ? null : category)
+  }
+
+  const renderChart = (type: string, dataKey: string, color: string) => {
+    const CommonProps = {
+      data: insightsData,
+      margin: { top: 5, right: 5, bottom: 5, left: 5 },
+    }
+
+    const commonAxisProps = {
+      stroke: "#888888",
+      strokeWidth: 1,
+    }
+
+    switch (type) {
+      case "line":
+        return (
+          <LineChart {...CommonProps}>
+            <XAxis dataKey="date" {...commonAxisProps} />
+            <YAxis {...commonAxisProps} />
+            <Line type="monotone" dataKey={dataKey} stroke={color} strokeWidth={2} dot={false} />
+            <ChartTooltip content={<ChartTooltipContent />} />
+          </LineChart>
+        )
+      case "bar":
+        return (
+          <BarChart {...CommonProps}>
+            <XAxis dataKey="date" {...commonAxisProps} />
+            <YAxis {...commonAxisProps} />
+            <Bar dataKey={dataKey} fill={color} />
+            <ChartTooltip content={<ChartTooltipContent />} />
+          </BarChart>
+        )
+      case "area":
+        return (
+          <AreaChart {...CommonProps}>
+            <XAxis dataKey="date" {...commonAxisProps} />
+            <YAxis {...commonAxisProps} />
+            <Area type="monotone" dataKey={dataKey} stroke={color} fill={color} fillOpacity={0.2} />
+            <ChartTooltip content={<ChartTooltipContent />} />
+          </AreaChart>
+        )
+      default:
+        return (
+          <LineChart {...CommonProps}>
+            <XAxis dataKey="date" {...commonAxisProps} />
+            <YAxis {...commonAxisProps} />
+            <Line type="monotone" dataKey={dataKey} stroke={color} strokeWidth={2} dot={false} />
+            <ChartTooltip content={<ChartTooltipContent />} />
+          </LineChart>
+        )
+    }
+  }
+
+  const renderInsightCard = (title: string, icon: React.ReactNode, dataKey: string, chartType: string, setChartType: (type: string) => void, color: string) => (
+    <Card className="w-full">
+      <div className="flex flex-col h-full">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <div className="flex items-center">
+            {icon}
+            <CardTitle className="text-sm font-medium ml-2">{title}</CardTitle>
+          </div>
+          <div className="flex space-x-1">
+            <Button variant="ghost" size="icon" onClick={() => setChartType("line")}><LineChartIcon className="h-4 w-4" /></Button>
+            <Button variant="ghost" size="icon" onClick={() => setChartType("bar")}><BarChartIcon className="h-4 w-4" /></Button>
+            <Button variant="ghost" size="icon" onClick={() => setChartType("area")}><AreaChartIcon className="h-4 w-4" /></Button>
+            <Button variant="ghost" size="icon" onClick={() => toggleDetailedView(dataKey)}>
+              {detailedView === dataKey ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="flex-grow pt-4 pl-0.5"> {/* Reduced left padding and added top padding */}
+          <ChartContainer config={{ [dataKey]: { label: title, color: color } }} className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              {renderChart(chartType, dataKey, color)}
+            </ResponsiveContainer>
+          </ChartContainer>
+          {detailedView === dataKey && (
+            <div className="mt-4">
+              <h4 className="text-sm font-semibold mb-2">Detailed {title} Data</h4>
+              <ul className="text-sm">
+                {insightsData.map((day, index) => (
+                  <li key={index} className="flex justify-between mb-1">
+                    <span>{day.date}</span>
+                    <span>{day[dataKey as keyof typeof day]} {dataKey === 'weight' ? 'kg' : dataKey === 'calories' ? 'kcal' : ''}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </CardContent>
+      </div>
+    </Card>
+  )
 
   return (
-    <div className="p-4">
-      <Tabs defaultValue="overview" onValueChange={setSelectedTab}>
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="weight">Weight</TabsTrigger>
-          <TabsTrigger value="calories">Calories</TabsTrigger>
-          <TabsTrigger value="macros">Macros</TabsTrigger>
-          <TabsTrigger value="micros">Micros</TabsTrigger>
-          <TabsTrigger value="activity">Activity</TabsTrigger>
-        </TabsList>
-
-        {showTimePeriodOptions(selectedTab) && (
-          <div className="mb-4 flex space-x-2">
-            <Button 
-              onClick={() => handleTimePeriodChange('day')} 
-              variant={timePeriod === 'day' ? 'default' : 'outline'}
-              className="text-black hover:text-white"
-            >
-              Day
-            </Button>
-            <Button 
-              onClick={() => handleTimePeriodChange('week')} 
-              variant={timePeriod === 'week' ? 'default' : 'outline'}
-              className="text-black hover:text-white"
-            >
-              Week
-            </Button>
-            <Button 
-              onClick={() => handleTimePeriodChange('month')} 
-              variant={timePeriod === 'month' ? 'default' : 'outline'}
-              className="text-black hover:text-white"
-            >
-              Month
-            </Button>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button 
-                  variant={timePeriod === 'custom' ? 'default' : 'outline'}
-                  className="text-black hover:text-white"
-                >
-                  Custom
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <CalendarComponent
-                  mode="range"
-                  selected={dateRange}
-                  onSelect={(range) => {
-                    if (range?.from && range?.to) {
-                      setDateRange({ from: range.from, to: range.to });
-                      setTimePeriod('custom');
-                    }
-                  }}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-        )}
-
-        <TabsContent value="overview">
-          <Overview />
-        </TabsContent>
-
-        <TabsContent value="weight">
-          <Card>
-            <CardHeader>
-              <CardTitle>Weight History</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={weightData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="weight" stroke="#8884d8" />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="calories">
-          <Card>
-            <CardHeader>
-              <CardTitle>Calorie Intake</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <DashboardCard
-                title="Calorie Intake"
-                icon={<Flame className="h-8 w-8 text-orange-500" />}
-                content={
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Calories Consumed</span>
-                      <span>{caloriesConsumed} / {calorieGoal}</span>
-                    </div>
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${(caloriesConsumed / calorieGoal) * 100}%` }}
-                      transition={{ duration: 1.5 }}
-                      className="h-2 bg-green-500 rounded"
-                    />
+    <div className="p-4 space-y-4">
+      <div className="flex justify-end items-center flex-wrap gap-4">
+        <div className="flex gap-4">
+          <Input
+            type="date"
+            value={dateRange.from.toISOString().split('T')[0]}
+            onChange={(e) => setDateRange(prev => ({ ...prev, from: new Date(e.target.value) }))}
+            className="text-black"
+          />
+          <Input
+            type="date"
+            value={dateRange.to.toISOString().split('T')[0]}
+            onChange={(e) => setDateRange(prev => ({ ...prev, to: new Date(e.target.value) }))}
+            className="text-black"
+          />
+        </div>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        {renderInsightCard("Weight", <Weight className="h-4 w-4" />, "weight", weightChartType, setWeightChartType, chartColors.weight)}
+        {renderInsightCard("Calories", <Utensils className="h-4 w-4" />, "calories", caloriesChartType, setCaloriesChartType, chartColors.calories)}
+        {renderInsightCard("Steps", <Footprints className="h-4 w-4" />, "steps", stepsChartType, setStepsChartType, chartColors.steps)}
+        <Card className="w-full">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div className="flex items-center">
+              <Utensils className="mr-2 h-4 w-4" />
+              <CardTitle className="text-sm font-medium">Macros</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-4 pl-0.5"> {/* Reduced left padding and added top padding */}
+            <div className="flex justify-between mb-4">
+              {macrosData.map((macro, index) => (
+                <div key={index} className="text-center">
+                  <div className="font-semibold" style={{ color: chartColors[macro.name.toLowerCase() as keyof typeof chartColors] }}>
+                    {macro.name}
                   </div>
-                }
-                animation={{
-                  initial: { opacity: 0, y: 50 },
-                  animate: { opacity: 1, y: 0 },
-                  transition: { duration: 0.5 }
-                }}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="macros">
-          <Card>
-            <CardHeader>
-              <CardTitle>Macronutrients</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col md:flex-row justify-between items-center">
-                <div className="mb-4 md:mb-0 md:mr-4">
-                  {macroData.map(({ name, value }) => (
-                    <div key={name} className="flex justify-between text-sm mb-2">
-                      <span>{name}</span>
-                      <span>{value}g</span>
-                    </div>
-                  ))}
+                  <div>{macro.value}g</div>
                 </div>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={macroData}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={100}
-                      fill="#8884d8"
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    >
-                      {macroData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="micros">
-          <Card>
-            <CardHeader>
-              <CardTitle>Micronutrients Insight</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4 h-48">
-                {Object.entries(microData)
-                  .filter(([name, data]) => !['Protein', 'Fat', 'Carbohydrates'].includes(name) && data !== undefined)
-                  .map(([name, { value, max }]) => (
-                    <NutrientProgress 
-                      key={name} 
-                      label={name} 
-                      value={Math.round(value)} 
-                      max={max} 
-                    />
-                  ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="activity">
-          <Card>
-            <CardHeader>
-              <CardTitle>Activity Summary</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center">
-                  <Footprints className="h-5 w-5 mr-2" />
-                  <span>Latest Steps: {stepsData[stepsData.length - 1]?.steps || 0}</span>
-                </div>
-                <div className="flex items-center">
-                  <Activity className="h-5 w-5 mr-2" />
-                  <span>Latest Workout: {latestActivity.workout} {latestActivity.quantity}</span>
-                </div>
-                <div className="flex items-center">
-                  <WeightIcon className="h-5 w-5 mr-2" />
-                  <span>Latest Weight: {weightData[weightData.length - 1]?.weight || 0} kg</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              ))}
+            </div>
+            <ChartContainer
+              config={{
+                protein: { label: "Protein", color: chartColors.protein },
+                carbs: { label: "Carbs", color: chartColors.carbs },
+                fat: { label: "Fat", color: chartColors.fat },
+              }}
+              className="h-[250px] w-full"
+            >
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={macrosData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    fill="#8884d8"
+                    label={({ name, value }) => `${name}: ${value}g`}
+                  >
+                    {macrosData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={chartColors[entry.name.toLowerCase() as keyof typeof chartColors]} />
+                    ))}
+                  </Pie>
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                </PieChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }
