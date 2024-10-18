@@ -45,8 +45,8 @@ const Pricing: React.FC = () => {
   const closeWaitlist = () => setIsWaitlistOpen(false)
 
   return (
-    <section id="pricing" className="w-full py-12 md:py-24 lg:py-32">
-      <h2 className="text-3xl font-bold text-center mb-8">Pricing Plans</h2>
+    <section id="pricing" className="w-full py-16 sm:py-24 md:py-32 lg:py-48">
+      <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-8">Pricing Plans</h2>
       <div className="flex justify-center items-center mb-8">
         <span className={`mr-2 ${!isAnnual ? 'font-bold' : ''}`}>Monthly</span>
         <Switch
@@ -55,18 +55,18 @@ const Pricing: React.FC = () => {
         />
         <span className={`ml-2 ${isAnnual ? 'font-bold' : ''}`}>Annually</span>
       </div>
-      <div className="flex flex-col gap-6 max-w-md mx-auto">
+      <div className="flex flex-col gap-6 max-w-md mx-auto px-4 sm:px-0">
         {plans.map((plan, index) => (
           <Card key={index} className="flex flex-col">
             <CardHeader>
               <CardTitle>{plan.name}</CardTitle>
             </CardHeader>
             <CardContent className="flex-grow">
-              <p className="text-2xl font-bold mb-4">
+              <p className="text-xl sm:text-2xl font-bold mb-4">
                 {isAnnual ? plan.annualPrice : plan.monthlyPrice}
                 {plan.name !== "Lifetime" && <span className="text-sm font-normal"> billed {isAnnual ? 'annually' : 'monthly'}</span>}
               </p>
-              <ul className="list-disc list-inside">
+              <ul className="list-disc list-inside text-sm sm:text-base">
                 {plan.features.map((feature, i) => (
                   <li key={i}>{feature}</li>
                 ))}

@@ -22,12 +22,12 @@ const features = [
 
 const Features: React.FC = () => {
   return (
-    <section id="features" className="w-full py-24 md:py-32 lg:py-48 bg-gray-50">
+    <section id="features" className="w-full py-16 sm:py-24 md:py-32 lg:py-48 bg-gray-50">
       <div className="container px-4 md:px-6">
-        <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl text-center mb-12">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tighter text-center mb-8 sm:mb-12">
           AI-Powered Calorie Tracking
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           {features.map((feature, index) => (
             <motion.div
               key={index}
@@ -38,11 +38,11 @@ const Features: React.FC = () => {
             >
               <Card className="bg-white border border-gray-200 h-full">
                 <CardHeader>
-                  <feature.icon className="w-10 h-10 mb-2 text-gray-900" />
-                  <CardTitle className="text-2xl">{feature.title}</CardTitle>
+                  <feature.icon className="w-8 h-8 sm:w-10 sm:h-10 mb-2 text-gray-900" />
+                  <CardTitle className="text-xl sm:text-2xl">{feature.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-600">{feature.description}</p>
+                  <p className="text-gray-600 text-sm sm:text-base">{feature.description}</p>
                 </CardContent>
               </Card>
             </motion.div>
