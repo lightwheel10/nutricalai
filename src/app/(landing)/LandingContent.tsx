@@ -192,7 +192,7 @@ export default function LandingContent() {
                     </div>
                     <div className="flex-1 flex justify-center">
                       <div className="bg-gray-700 rounded px-2 py-1 text-xs text-gray-300">
-                        www.aicalorietracker.com
+                        wwww.nutricalai.com
                       </div>
                     </div>
                   </div>
