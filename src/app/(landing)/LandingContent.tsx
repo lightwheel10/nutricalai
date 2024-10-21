@@ -183,7 +183,7 @@ export default function LandingContent() {
                 </Button>
               </div>
               <div className="flex-1 w-full max-w-2xl">
-                <div className="w-full rounded-lg overflow-hidden shadow-2xl">
+                <div className="w-full rounded-lg overflow-hidden shadow-2xl relative">
                   <div className="bg-gray-800 p-2 flex items-center">
                     <div className="flex space-x-2">
                       <div className="w-3 h-3 rounded-full bg-red-500"></div>
@@ -192,12 +192,21 @@ export default function LandingContent() {
                     </div>
                     <div className="flex-1 flex justify-center">
                       <div className="bg-gray-700 rounded px-2 py-1 text-xs text-gray-300">
-                        wwww.nutricalai.com
+                        www.nutricalai.com
                       </div>
                     </div>
                   </div>
-                  <div className="bg-gray-100 aspect-video flex items-center justify-center">
-                    <p className="text-3xl font-bold text-gray-400">Website Coming Soon</p>
+                  <div className="relative">
+                    <Image
+                      src="/nutricalai-dashboard.png"
+                      alt="NutricalAI Dashboard Preview"
+                      width={600}
+                      height={400}
+                      className="w-full h-auto filter blur-sm"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                      <p className="text-xl font-bold text-white">Website Coming Soon</p>
+                    </div>
                   </div>
                 </div>
               </div>

@@ -124,7 +124,7 @@ const MobileLandingContent: React.FC<MobileLandingContentProps> = () => {
             Join Waitlist for Early Access
           </Button>
           <div className="mt-6">
-            <div className="w-full rounded-lg overflow-hidden shadow-lg">
+            <div className="w-full rounded-lg overflow-hidden shadow-lg relative">
               <div className="bg-gray-800 p-2 flex items-center">
                 <div className="flex space-x-2">
                   <div className="w-2 h-2 rounded-full bg-red-500"></div>
@@ -137,8 +137,17 @@ const MobileLandingContent: React.FC<MobileLandingContentProps> = () => {
                   </div>
                 </div>
               </div>
-              <div className="bg-gray-100 aspect-video flex items-center justify-center">
-                <p className="text-xl font-bold text-gray-400">Website Coming Soon</p>
+              <div className="relative">
+                <Image
+                  src="/nutricalai-dashboard.png"
+                  alt="NutricalAI Dashboard Preview"
+                  width={600}
+                  height={400}
+                  className="w-full h-auto filter blur-sm"
+                />
+                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                  <p className="text-xl font-bold text-white">Website Coming Soon</p>
+                </div>
               </div>
             </div>
           </div>
