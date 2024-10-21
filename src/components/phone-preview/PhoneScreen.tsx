@@ -108,7 +108,8 @@ export function PhoneScreen() {
         {stage === 'recording' && <RecordingAnimation onStop={handleStopRecording} />}
         
         {stage === 'text-input' && (
-          <div className="flex flex-col items-center space-y-4 w-full">
+          <div className="flex flex-col items-center space-y-4 w-full max-w-[90%]">
+            <LanguageAnimation />
             <Input
               value={mealInput}
               onChange={(e) => setMealInput(e.target.value)}
@@ -116,18 +117,21 @@ export function PhoneScreen() {
               className="w-full"
             />
             <Button
-              className="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold"
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold"
               onClick={handleTextSubmit}
             >
               Submit
             </Button>
-            <LanguageAnimation />
           </div>
         )}
 
         {stage === 'loading' && <LoadingAnimation />}
         
-        {stage === 'result' && mealDetails && <AIAnalysisResult mealDetails={mealDetails} />}
+        {stage === 'result' && mealDetails && (
+          <div className="w-full h-full">
+            <AIAnalysisResult mealDetails={mealDetails} />
+          </div>
+        )}
       </motion.div>
     </AnimatePresence>
   )

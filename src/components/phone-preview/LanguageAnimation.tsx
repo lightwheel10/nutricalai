@@ -23,20 +23,22 @@ export function LanguageAnimation() {
   }, [])
 
   return (
-    <div className="mb-8 text-center bg-gray-100 p-4 rounded-lg shadow-inner">
-      <p className="text-sm text-gray-600 mb-3 font-medium">Example Input:</p>
-      <AnimatePresence mode="wait">
-        <motion.p
-          key={currentExample}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.5 }}
-          className="text-base font-semibold text-gray-800 italic"
-        >
-          &ldquo;{examples[currentExample]}&rdquo;
-        </motion.p>
-      </AnimatePresence>
+    <div className="mb-4 text-center bg-gray-100 p-4 rounded-lg shadow-inner w-full">
+      <p className="text-sm text-gray-600 mb-2 font-medium">Example Input:</p>
+      <div className="relative h-16 overflow-hidden">
+        <AnimatePresence initial={false}>
+          <motion.p
+            key={currentExample}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.7, ease: "easeInOut" }}
+            className="text-sm font-semibold text-gray-800 italic absolute inset-0 flex items-center justify-center"
+          >
+            &ldquo;{examples[currentExample]}&rdquo;
+          </motion.p>
+        </AnimatePresence>
+      </div>
     </div>
   )
 }

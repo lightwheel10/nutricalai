@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
           role: "system",
           content: `You are a meal logging assistant that outputs meal details in JSON. The JSON object must strictly adhere to the following schema, with no additional properties:
           ${JSON.stringify(schema, null, 2)}
-          Ensure that the 'nutrients' array includes entries for protein, carbs, and fat, as these are used to generate a pie chart.`,
+          Ensure that the 'nutrients' array includes entries for protein, carbs, and fat, as these are used to generate a pie chart. Additionally, always include micronutrients (such as fiber, vitamin C, iron,calcium etc) in the nutrients array, even if you have to estimate their values based on typical content for the given meal.`,
         },
         {
           role: "user",
