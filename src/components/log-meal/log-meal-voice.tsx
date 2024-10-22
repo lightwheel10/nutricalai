@@ -15,6 +15,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Mic } from 'lucide-react';
+import { getUploadUrl } from '@/lib/supabase';
 
 interface LogMealVoiceProps {
   onLogMeal: (mealDetails: { meal_name: string; calories: number; nutrients: { name: string; amount: number; unit: string }[]; insights: string; quantity: string; mealType: string }) => void;
@@ -28,28 +29,51 @@ export function LogMealVoice({ onLogMeal, onError, audioBlob: initialAudioBlob }
 
   const processAudio = useCallback(async (audioBlob: Blob) => {
     try {
-      const formData = new FormData();
-      formData.append('audio', audioBlob, 'audio.webm');
+      console.log("Starting audio processing");
+      const { data: urlData, error: urlError } = await getUploadUrl();
+      if (urlError) {
+        console.error("Error getting upload URL:", urlError);
+        throw urlError;
+      }
 
+      console.log("Uploading audio to signed URL");
+      const uploadResponse = await fetch(urlData.signedUrl, {
+        method: 'PUT',
+        body: audioBlob,
+        headers: { 'Content-Type': 'audio/webm' },
+      });
+
+      if (!uploadResponse.ok) {
+        console.error("Upload response not OK:", uploadResponse.status, uploadResponse.statusText);
+        throw new Error('Failed to upload audio');
+      }
+
+      console.log("Audio uploaded successfully. Processing audio...");
       const response = await fetch('/api/process-audio', {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ audioPath: urlData.path }),
       });
 
       if (!response.ok) {
+        console.error("Process audio response not OK:", response.status, response.statusText);
         throw new Error('Failed to process audio');
       }
 
-      const data = await response.json();
+      const responseData = await response.json();
+      console.log("Process audio response:", responseData);
 
-      if (data.status === 'success') {
-        onLogMeal(data.meal_details);
+      if (responseData.status === 'success' && responseData.meal_details) {
+        onLogMeal(responseData.meal_details);
       } else {
-        throw new Error(data.message || 'Failed to analyze meal');
+        console.error("Invalid response data:", responseData);
+        throw new Error(responseData.message || 'Failed to analyze meal');
       }
     } catch (error) {
       console.error("Error processing audio:", error);
-      onError("Failed to process audio. Please try again.");
+      onError("Failed to process audio. Please try again. Error: " + (error instanceof Error ? error.message : String(error)));
     }
   }, [onLogMeal, onError]);
 

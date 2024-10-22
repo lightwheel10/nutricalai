@@ -41,12 +41,17 @@ export async function POST(req: NextRequest) {
   });
 
   try {
-    let userContent = input_text;
+    const userContent = input_text;
+
+    console.log("User content before processing:", userContent);
+
+    if (!userContent) {
+      console.error("No input text provided");
+      return NextResponse.json({ status: 'error', message: 'No input text provided' }, { status: 400 });
+    }
 
     if (input_audio) {
-      // Here you would typically send the audio to a speech-to-text service
-      // For this example, we'll simulate it with a placeholder
-      userContent = "Simulated transcription of audio input";
+      console.warn("Audio input detected but not processed in this route");
     }
 
     const chatCompletion = await groq.chat.completions.create({
