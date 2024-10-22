@@ -129,8 +129,15 @@ const DashboardContent = () => {
     setMicroData(calculateMicronutrients(todayMeals));
   }, [todayMeals]);
 
-  const handleLogMealVoice = (input: string) => {
-    console.log("Logging meal via voice:", input);
+  const handleLogMealVoice = (mealDetails: {
+    meal_name: string;
+    calories: number;
+    nutrients: { name: string; amount: number; unit: string }[];
+    insights: string;
+    quantity: string;
+    mealType: string;
+  }) => {
+    console.log("Logging meal via voice:", mealDetails);
     // TODO: Implement voice logging logic here
   };
 
@@ -355,7 +362,7 @@ const DashboardContent = () => {
       </main>
 
       <div className="fixed bottom-8 right-8 flex flex-col space-y-4">
-        <LogMealVoice onLogMeal={handleLogMealVoice} />
+        <LogMealVoice onLogMeal={handleLogMealVoice} onError={(error) => console.error('Voice log error:', error)} />
         <LogMealText onLogMeal={handleLogMealText} />
       </div>
     </div>

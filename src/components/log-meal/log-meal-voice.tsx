@@ -1,97 +1,95 @@
-import React, { useState } from 'react'
-import { Button } from "@/components/ui/button"
-import { Mic } from 'lucide-react'
-import axios from 'axios'
-import { supabase } from '@/lib/supabaseClient'
+// This component allows users to log meals using voice input.
+// It uses the Web Speech API for speech recognition and sends the transcribed text to an API for meal analysis.
+// The component is designed for both technical and non-technical users.
+
+// For non-technical readers:
+// This code creates a function that processes audio of your meal description.
+// You can speak about the meal you've had, and the system will try to understand and log it.
+// The process involves:
+// 1. Converting your speech to text
+// 2. Extracting relevant meal information from the text
+// 3. Sending this information to a smart system that understands meal details
+// 4. Logging the meal details in your account
+// This makes it easier and quicker to keep track of your meals without typing!
+
+import { useEffect, useState, useCallback } from 'react';
+import { Button } from "@/components/ui/button";
+import { Mic } from 'lucide-react';
 
 interface LogMealVoiceProps {
-  onLogMeal: (input: string) => void
+  onLogMeal: (mealDetails: { meal_name: string; calories: number; nutrients: { name: string; amount: number; unit: string }[]; insights: string; quantity: string; mealType: string }) => void;
+  onError: (error: string) => void;
+  audioBlob?: Blob;
 }
 
-interface SpeechRecognitionEvent extends Event {
-  results: SpeechRecognitionResultList;
-}
+export function LogMealVoice({ onLogMeal, onError, audioBlob: initialAudioBlob }: LogMealVoiceProps) {
+  const [isRecording, setIsRecording] = useState(false);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(initialAudioBlob || null);
 
-interface SpeechRecognitionErrorEvent extends Event {
-  error: string;
-}
+  const processAudio = useCallback(async (audioBlob: Blob) => {
+    try {
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'audio.webm');
 
-interface SpeechRecognition extends EventTarget {
-  lang: string;
-  interimResults: boolean;
-  maxAlternatives: number;
-  start: () => void;
-  onresult: (event: SpeechRecognitionEvent) => void;
-  onerror: (event: SpeechRecognitionErrorEvent) => void;
-  onend: () => void;
-}
+      const response = await fetch('/api/process-audio', {
+        method: 'POST',
+        body: formData,
+      });
 
-declare global {
-  interface Window {
-    SpeechRecognition: new () => SpeechRecognition;
-    webkitSpeechRecognition: new () => SpeechRecognition;
-  }
-}
-
-export function LogMealVoice({ onLogMeal }: LogMealVoiceProps) {
-  const [isListening, setIsListening] = useState(false)
-
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api-hwu2aew3cq-uc.a.run.app';
-
-  const handleVoiceInput = () => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-    const recognition = new SpeechRecognition()
-    recognition.lang = 'en-US'
-    recognition.interimResults = false
-    recognition.maxAlternatives = 1
-
-    recognition.onresult = async (event: SpeechRecognitionEvent) => {
-      const transcript = event.results[0][0].transcript;
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          console.error("User is not authenticated");
-          return;
-        }
-        const token = session.access_token;
-        const response = await axios.post(`${apiUrl}/log_and_analyze_meal`, 
-          { input_text: transcript, loggedBy: 'AI' },
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`
-            }
-          }
-        );
-        if (response.data.status === 'success') {
-          console.log("Parsed Meal Details:", response.data.meal_details);
-          onLogMeal(response.data.meal_details);
-        } else {
-          console.error("Error:", response.data.message);
-        }
-      } catch (error) {
-        console.error("API Error:", error);
+      if (!response.ok) {
+        throw new Error('Failed to process audio');
       }
-      setIsListening(false);
-    };
 
-    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-      console.error(event.error)
-      setIsListening(false)
+      const data = await response.json();
+
+      if (data.status === 'success') {
+        onLogMeal(data.meal_details);
+      } else {
+        throw new Error(data.message || 'Failed to analyze meal');
+      }
+    } catch (error) {
+      console.error("Error processing audio:", error);
+      onError("Failed to process audio. Please try again.");
     }
+  }, [onLogMeal, onError]);
 
-    recognition.onend = () => {
-      setIsListening(false)
+  useEffect(() => {
+    if (audioBlob) {
+      processAudio(audioBlob);
     }
+  }, [audioBlob, processAudio]);
 
-    setIsListening(true)
-    recognition.start()
-  }
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      const audioChunks: Blob[] = [];
+
+      mediaRecorder.addEventListener("dataavailable", (event) => {
+        audioChunks.push(event.data);
+      });
+
+      mediaRecorder.addEventListener("stop", () => {
+        const newAudioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        setAudioBlob(newAudioBlob);
+      });
+
+      mediaRecorder.start();
+      setIsRecording(true);
+
+      setTimeout(() => {
+        mediaRecorder.stop();
+        setIsRecording(false);
+      }, 10000); // Stop after 10 seconds
+    } catch (error) {
+      console.error('Error accessing microphone:', error);
+      onError('Failed to access microphone');
+    }
+  };
 
   return (
-    <Button size="lg" className="rounded-full" onClick={handleVoiceInput} disabled={isListening}>
-      <Mic className="mr-2 h-4 w-4" />
-      {isListening ? 'Listening...' : 'Log Meal (Voice) 🎙️'}
+    <Button onClick={startRecording} disabled={isRecording}>
+      <Mic className="mr-2 h-4 w-4" /> {isRecording ? 'Recording...' : 'Record Meal'}
     </Button>
-  )
+  );
 }

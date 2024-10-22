@@ -12,10 +12,19 @@ import { Input } from '@/components/ui/input'
 import { ArrowLeft } from 'lucide-react'
 import { LanguageAnimation } from './LanguageAnimation'
 
+interface MealDetails {
+  meal_name: string;
+  calories: number;
+  nutrients: Array<{ name: string; amount: number; unit: string }>;
+  insights: string;
+  quantity: string;
+  mealType: string;
+}
+
 export function PhoneScreen() {
   const [stage, setStage] = useState<'initial' | 'options' | 'recording' | 'loading' | 'result' | 'text-input'>('initial')
   const [mealInput, setMealInput] = useState('')
-  const [mealDetails, setMealDetails] = useState(null)
+  const [mealDetails, setMealDetails] = useState<MealDetails | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const handleLogMeal = () => setStage('options')
@@ -24,28 +33,16 @@ export function PhoneScreen() {
 
   const handleBack = () => {
     setError(null)
-    if (stage === 'text-input') {
-      setStage('options')
-    } else if (stage === 'recording') {
+    if (stage === 'text-input' || stage === 'recording') {
       setStage('options')
     } else {
       setStage('initial')
     }
   }
 
-  const handleStopRecording = async (audioBlob: Blob) => {
+  const handleStopRecording = async () => {
     setStage('loading')
-    try {
-      const reader = new FileReader()
-      reader.readAsDataURL(audioBlob)
-      reader.onloadend = async () => {
-        const base64Audio = reader.result as string
-        const base64Data = base64Audio.split(',')[1]
-        await analyzeMeal({ input_audio: base64Data })
-      }
-    } catch (error) {
-      handleError(error)
-    }
+    // The actual processing is now handled by LogMealVoice
   }
 
   const handleTextSubmit = async () => {
@@ -53,7 +50,7 @@ export function PhoneScreen() {
     try {
       await analyzeMeal({ input_text: mealInput })
     } catch (error) {
-      handleError(error)
+      handleError(error as Error)
     }
   }
 
@@ -72,10 +69,15 @@ export function PhoneScreen() {
     }
   }
 
-  const handleError = (error: Error | unknown) => {
+  const handleError = (error: unknown) => {
     console.error('Error analyzing meal:', error)
-    setError('An error occurred. Please try again.')
+    setError(error instanceof Error ? error.message : 'An error occurred. Please try again.')
     setStage('options')
+  }
+
+  const handleVoiceLogMeal = (mealDetails: MealDetails) => {
+    setMealDetails(mealDetails)
+    setStage('result')
   }
 
   return (
@@ -107,7 +109,13 @@ export function PhoneScreen() {
           <LogMealOptions onVoice={handleStartRecording} onText={handleTextLog} />
         )}
         
-        {stage === 'recording' && <RecordingAnimation onStop={handleStopRecording} />}
+        {stage === 'recording' && (
+          <RecordingAnimation
+            onStop={handleStopRecording}
+            onLogMeal={handleVoiceLogMeal}
+            onError={handleError}
+          />
+        )}
         
         {stage === 'text-input' && (
           <div className="flex flex-col items-center space-y-4 w-full max-w-[90%]">

@@ -11,6 +11,7 @@ interface AIAnalysisResultProps {
     nutrients: Array<{ name: string; amount: number; unit: string }>;
     insights: string;
     quantity: string;
+    mealType: string; // 
   }
 }
 
