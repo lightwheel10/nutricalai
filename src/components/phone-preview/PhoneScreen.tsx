@@ -103,7 +103,9 @@ export function PhoneScreen() {
           </>
         )}
 
-        {stage === 'options' && <LogMealOptions onVoice={handleStartRecording} onText={handleTextLog} />}
+        {stage === 'options' && (
+          <LogMealOptions onVoice={handleStartRecording} onText={handleTextLog} />
+        )}
         
         {stage === 'recording' && <RecordingAnimation onStop={handleStopRecording} />}
         
