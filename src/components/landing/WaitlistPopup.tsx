@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { X } from 'lucide-react'
-import Link from 'next/link'
 import { supabase } from '@/lib/supabaseClient'
 
 interface WaitlistPopupProps {
@@ -96,12 +95,12 @@ const WaitlistPopup: React.FC<WaitlistPopupProps> = ({ isOpen, onClose }) => {
             {submitMessage && (
               <p className="mt-4 text-center text-sm text-green-600">{submitMessage}</p>
             )}
-            <div className="mt-4 text-center">
+            {/* <div className="mt-4 text-center">
               <p className="text-sm text-gray-600">Already have access?</p>
               <Link href="/login" className="text-sm text-blue-600 hover:text-blue-800">
                 Log in here
               </Link>
-            </div>
+            </div> */}
           </motion.div>
         </motion.div>
       )}

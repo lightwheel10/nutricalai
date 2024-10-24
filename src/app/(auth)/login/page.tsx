@@ -1,14 +1,8 @@
-import dynamic from 'next/dynamic'
-
-// Dynamically import the LoginContent component
-const LoginContent = dynamic(() => import('./LoginContent'), {
-  loading: () => <p>Loading...</p>,
-  ssr: false
-})
+import { redirect } from 'next/navigation'
 
 // Define the main LoginPage component
 export default function LoginPage() {
-  return <LoginContent />
+  redirect('/')  // Redirect to home page
 }
 
 // For Non-Technical Readers:

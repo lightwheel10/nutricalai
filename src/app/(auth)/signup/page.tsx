@@ -1,10 +1,5 @@
-import dynamic from 'next/dynamic'
+import { redirect } from 'next/navigation'
 
-const SignUpContent = dynamic(() => import('./SignUpContent'), {
-  loading: () => <p>Loading...</p>,
-  ssr: false
-})
-
-export default function SignUpPage() {
-  return <SignUpContent />
+export default function SignupPage() {
+  redirect('/')  // Redirect to home page
 }
