@@ -12,108 +12,140 @@
 // 4. Logging the meal details in your account
 // This makes it easier and quicker to keep track of your meals without typing!
 
-import { useEffect, useState, useCallback } from 'react';
-import { Button } from "@/components/ui/button";
-import { Mic } from 'lucide-react';
-import { getUploadUrl } from '@/lib/supabase';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { Mic, Loader2 } from 'lucide-react';
+import { uploadAudio } from '@/lib/supabase';
 
 interface LogMealVoiceProps {
-  onLogMeal: (mealDetails: { meal_name: string; calories: number; nutrients: { name: string; amount: number; unit: string }[]; insights: string; quantity: string; mealType: string }) => void;
+  onLogMeal: (mealDetails: {
+    meal_name: string;
+    calories: number;
+    nutrients: Array<{ name: string; amount: number; unit: string }>;
+    insights: string;
+    quantity: string;
+    mealType: string;
+  }) => void;
   onError: (error: string) => void;
+  // Optional props for phone preview
   audioBlob?: Blob;
+  sessionId?: string;
+  // Optional prop to hide recording UI
+  hideUI?: boolean;
 }
 
-export function LogMealVoice({ onLogMeal, onError, audioBlob: initialAudioBlob }: LogMealVoiceProps) {
+export function LogMealVoice({ 
+  onLogMeal, 
+  onError, 
+  audioBlob: externalBlob, 
+  sessionId: externalSessionId,
+  hideUI 
+}: LogMealVoiceProps) {
   const [isRecording, setIsRecording] = useState(false);
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(initialAudioBlob || null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
 
-  const processAudio = useCallback(async (audioBlob: Blob) => {
+  const processAudio = useCallback(async (blob: Blob, sid: string) => {
     try {
-      console.log("Starting audio processing");
-      const { data: urlData, error: urlError } = await getUploadUrl();
-      if (urlError) {
-        console.error("Error getting upload URL:", urlError);
-        throw urlError;
-      }
+      setIsProcessing(true);
+      const { data: uploadData, error: uploadError } = await uploadAudio(
+        new File([blob], `audio_${sid}.webm`, { type: 'audio/webm' })
+      );
 
-      console.log("Uploading audio to signed URL");
-      const uploadResponse = await fetch(urlData.signedUrl, {
-        method: 'PUT',
-        body: audioBlob,
-        headers: { 'Content-Type': 'audio/webm' },
-      });
-
-      if (!uploadResponse.ok) {
-        console.error("Upload response not OK:", uploadResponse.status, uploadResponse.statusText);
+      if (uploadError || !uploadData) {
+        console.error("Upload error:", uploadError);
         throw new Error('Failed to upload audio');
       }
 
-      console.log("Audio uploaded successfully. Processing audio...");
       const response = await fetch('/api/process-audio', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ audioPath: urlData.path }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          audioPath: uploadData.path,
+          session_id: sid
+        }),
       });
 
       if (!response.ok) {
-        console.error("Process audio response not OK:", response.status, response.statusText);
-        throw new Error('Failed to process audio');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to process audio');
       }
 
-      const responseData = await response.json();
-      console.log("Process audio response:", responseData);
-
-      if (responseData.status === 'success' && responseData.meal_details) {
-        onLogMeal(responseData.meal_details);
+      const data = await response.json();
+      if (data.status === 'success' && data.meal_details) {
+        onLogMeal(data.meal_details);
       } else {
-        console.error("Invalid response data:", responseData);
-        throw new Error(responseData.message || 'Failed to analyze meal');
+        throw new Error('Invalid response from server');
       }
     } catch (error) {
-      console.error("Error processing audio:", error);
-      onError("Failed to process audio. Please try again. Error: " + (error instanceof Error ? error.message : String(error)));
+      console.error("Process audio error:", error);
+      onError(error instanceof Error ? error.message : 'Failed to process audio');
+    } finally {
+      setIsProcessing(false);
     }
   }, [onLogMeal, onError]);
 
   useEffect(() => {
-    if (audioBlob) {
-      processAudio(audioBlob);
+    if (externalBlob && externalSessionId) {
+      processAudio(externalBlob, externalSessionId);
     }
-  }, [audioBlob, processAudio]);
+  }, [externalBlob, externalSessionId, processAudio]);
 
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      const audioChunks: Blob[] = [];
+      mediaRecorderRef.current = new MediaRecorder(stream);
+      chunksRef.current = [];
 
-      mediaRecorder.addEventListener("dataavailable", (event) => {
-        audioChunks.push(event.data);
-      });
+      mediaRecorderRef.current.ondataavailable = (e) => {
+        chunksRef.current.push(e.data);
+      };
 
-      mediaRecorder.addEventListener("stop", () => {
-        const newAudioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-        setAudioBlob(newAudioBlob);
-      });
+      mediaRecorderRef.current.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        const sid = Math.random().toString(36).substring(2) + Date.now().toString(36);
+        processAudio(blob, sid);
+      };
 
-      mediaRecorder.start();
+      mediaRecorderRef.current.start();
       setIsRecording(true);
-
-      setTimeout(() => {
-        mediaRecorder.stop();
-        setIsRecording(false);
-      }, 10000); // Stop after 10 seconds
     } catch (error) {
-      console.error('Error accessing microphone:', error);
-      onError('Failed to access microphone');
+      onError('Failed to start recording');
     }
   };
 
+  const stopRecording = () => {
+    if (mediaRecorderRef.current?.state === 'recording') {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  if (hideUI) return null;
+
   return (
-    <Button onClick={startRecording} disabled={isRecording}>
-      <Mic className="mr-2 h-4 w-4" /> {isRecording ? 'Recording...' : 'Record Meal'}
+    <Button
+      onClick={isRecording ? stopRecording : startRecording}
+      disabled={isProcessing}
+      className="flex items-center gap-2"
+    >
+      {isProcessing ? (
+        <>
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Processing...
+        </>
+      ) : isRecording ? (
+        <>
+          <Mic className="h-4 w-4 text-red-500 animate-pulse" />
+          Stop Recording
+        </>
+      ) : (
+        <>
+          <Mic className="h-4 w-4" />
+          Record Meal
+        </>
+      )}
     </Button>
   );
 }

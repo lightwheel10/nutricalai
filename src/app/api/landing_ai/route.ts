@@ -26,8 +26,12 @@ const schema = {
 
 export async function POST(req: NextRequest) {
   console.log("POST request received in landing_ai route");
-  const { input_text, input_audio } = await req.json();
-  console.log("Received request in landing_ai:", { input_text, input_audio: input_audio ? 'Audio data received' : 'No audio data' });
+  const { input_text, input_audio, session_id } = await req.json();
+  console.log("Received request in landing_ai:", { 
+    input_text, 
+    input_audio: input_audio ? 'Audio data received' : 'No audio data',
+    session_id 
+  });
 
   const groqApiKey = process.env.GROQ_API_KEY;
 

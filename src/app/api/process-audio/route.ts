@@ -5,34 +5,41 @@ import { supabase } from '@/lib/supabaseClient';
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 export async function POST(req: NextRequest) {
-  const { audioPath } = await req.json();
-
-  if (!audioPath) {
-    return NextResponse.json({ status: 'error', message: 'No audio path provided' }, { status: 400 });
-  }
-
   try {
-    console.log("Attempting to download file from Supabase:", audioPath);
+    const { audioPath, session_id } = await req.json();
+
+    if (!audioPath) {
+      return NextResponse.json({ 
+        status: 'error', 
+        message: 'No audio path provided' 
+      }, { status: 400 });
+    }
+
+    // Store audio processing record
+    const { error: logError } = await supabase
+      .from('meal_voice_logs')
+      .insert({
+        session_id,
+        audio_path: audioPath,
+        status: 'processing',
+        created_at: new Date().toISOString()
+      });
+
+    if (logError) {
+      console.error("Error logging voice input:", logError);
+      throw logError;
+    }
+
     const { data, error } = await supabase.storage
       .from('meal-audio')
       .download(audioPath);
 
-    if (error) {
-      console.error("Error downloading file from Supabase:", error);
-      throw error;
+    if (error || !data) {
+      console.error("Error downloading audio:", error);
+      throw error || new Error('No data received');
     }
-
-    if (!data) {
-      console.error("No data received from Supabase");
-      throw new Error("No data received from Supabase");
-    }
-
-    console.log("File downloaded successfully. Size:", data.size);
 
     const buffer = await data.arrayBuffer();
-    console.log("Buffer created. Size:", buffer.byteLength);
-
-    console.log("Attempting to transcribe audio with Groq API");
     const transcription = await groq.audio.transcriptions.create({
       file: new File([buffer], 'audio.webm', { type: 'audio/webm' }),
       model: "whisper-large-v3-turbo",
@@ -41,32 +48,39 @@ export async function POST(req: NextRequest) {
       temperature: 0.0,
     });
 
-    console.log("Transcription result:", transcription);
-
-    if (!transcription.text || transcription.text.trim() === '') {
-      throw new Error("Transcription failed: Empty or invalid result");
+    if (!transcription.text) {
+      throw new Error('Transcription failed');
     }
 
-    const transcribedText = transcription.text;
-
-    // Use the landing_ai route to analyze the transcribed text
-    const landingAiResponse = await fetch(new URL('/api/landing_ai', req.url).toString(), {
+    const aiResponse = await fetch(new URL('/api/landing_ai', req.url).toString(), {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ input_text: transcribedText }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        input_text: transcription.text,
+        session_id
+      })
     });
 
-    const landingAiData = await landingAiResponse.json();
+    const aiData = await aiResponse.json();
 
-    if (landingAiData.status === 'success') {
-      return NextResponse.json(landingAiData);
-    } else {
-      return NextResponse.json({ status: 'error', message: landingAiData.message }, { status: 400 });
-    }
+    // Update log with results
+    await supabase
+      .from('meal_voice_logs')
+      .update({
+        transcription: transcription.text,
+        meal_details: aiData.meal_details,
+        status: aiData.status === 'success' ? 'completed' : 'failed',
+        updated_at: new Date().toISOString()
+      })
+      .eq('session_id', session_id);
+
+    return NextResponse.json(aiData);
+
   } catch (error) {
-    console.error("API Error in process-audio:", error);
-    return NextResponse.json({ status: 'error', message: 'Failed to process audio.' }, { status: 500 });
+    console.error("Process audio error:", error);
+    return NextResponse.json({ 
+      status: 'error', 
+      message: error instanceof Error ? error.message : 'Failed to process audio' 
+    }, { status: 500 });
   }
 }

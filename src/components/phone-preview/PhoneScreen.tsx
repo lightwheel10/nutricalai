@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { VoiceInputButton } from './VoiceInputButton'
 import { RecordingAnimation } from './RecordingAnimation'
@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ArrowLeft } from 'lucide-react'
 import { LanguageAnimation } from './LanguageAnimation'
+import { storeLandingMealInput } from '@/lib/supabase'
+import { getCookie, setCookie } from 'cookies-next'
 
 interface MealDetails {
   meal_name: string;
@@ -26,6 +28,21 @@ export function PhoneScreen() {
   const [mealInput, setMealInput] = useState('')
   const [mealDetails, setMealDetails] = useState<MealDetails | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [sessionId, setSessionId] = useState<string>('')
+  
+  useEffect(() => {
+    // Get or create session ID using cookies
+    let sid = getCookie('session_id') as string
+    if (!sid) {
+      sid = Math.random().toString(36).substring(2) + Date.now().toString(36)
+      setCookie('session_id', sid, {
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+        path: '/',
+        sameSite: 'strict'
+      })
+    }
+    setSessionId(sid)
+  }, [])
 
   const handleLogMeal = () => setStage('options')
   const handleStartRecording = () => setStage('recording')
@@ -55,17 +72,40 @@ export function PhoneScreen() {
   }
 
   const analyzeMeal = async (input: { input_audio?: string; input_text?: string }) => {
-    const response = await fetch('/api/landing_ai', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(input)
-    })
-    const data = await response.json()
-    if (data.status === 'success') {
-      setMealDetails(data.meal_details)
-      setStage('result')
-    } else {
-      throw new Error(data.message)
+    try {
+      const response = await fetch('/api/landing_ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...input,
+          session_id: sessionId
+        })
+      });
+      const data = await response.json();
+
+      if (data.status === 'success') {
+        if (input.input_text && sessionId) {
+          await storeLandingMealInput({
+            sessionId,
+            inputText: input.input_text,
+            mealDetails: data.meal_details,
+            metadata: {
+              userAgent: window.navigator.userAgent,
+              browserLanguage: window.navigator.language,
+              screenWidth: window.innerWidth,
+              screenHeight: window.innerHeight,
+              timestamp: new Date().toISOString()
+            }
+          });
+        }
+
+        setMealDetails(data.meal_details);
+        setStage('result');
+      } else {
+        throw new Error(data.message);
+      }
+    } catch (error) {
+      handleError(error);
     }
   }
 
@@ -114,6 +154,7 @@ export function PhoneScreen() {
             onStop={handleStopRecording}
             onLogMeal={handleVoiceLogMeal}
             onError={handleError}
+            sessionId={sessionId}
           />
         )}
         

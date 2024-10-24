@@ -14,9 +14,10 @@ interface RecordingAnimationProps {
     mealType: string;
   }) => void
   onError: (error: string) => void
+  sessionId: string
 }
 
-export function RecordingAnimation({ onStop, onLogMeal, onError }: RecordingAnimationProps) {
+export function RecordingAnimation({ onStop, onLogMeal, onError, sessionId }: RecordingAnimationProps) {
   const [timeLeft, setTimeLeft] = useState(20)
   const [isUserSpeaking, setIsUserSpeaking] = useState(false)
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
@@ -127,6 +128,7 @@ export function RecordingAnimation({ onStop, onLogMeal, onError }: RecordingAnim
           onLogMeal={onLogMeal}
           onError={onError}
           audioBlob={audioBlob}
+          sessionId={sessionId}
         />
       )}
     </div>

@@ -93,3 +93,59 @@ export async function getUploadUrl() {
 
   return { data, error: null };
 }
+
+interface MealInputMetadata {
+  userAgent?: string;
+  browserLanguage?: string;
+  screenWidth?: number;
+  screenHeight?: number;
+  timestamp: string;
+}
+
+export async function storeLandingMealInput(input: {
+  sessionId: string;
+  inputText: string;
+  mealDetails?: {
+    meal_name: string;
+    calories: number;
+    nutrients: Array<{ name: string; amount: number; unit: string }>;
+    insights: string;
+    quantity: string;
+    mealType?: string;
+  };
+  metadata?: MealInputMetadata;
+}) {
+  try {
+    const { data, error } = await supabase
+      .from('landing-meal-inputs')
+      .insert([
+        {
+          session_id: input.sessionId,
+          input_text: input.inputText,
+          meal_name: input.mealDetails?.meal_name,
+          calories: input.mealDetails?.calories,
+          nutrients: input.mealDetails?.nutrients,
+          insights: input.mealDetails?.insights,
+          quantity: input.mealDetails?.quantity,
+          meal_type: input.mealDetails?.mealType,
+          metadata: {
+            ...input.metadata,
+            timestamp: new Date().toISOString()
+          }
+        }
+      ])
+      .select();
+
+    if (error) {
+      console.error('Supabase error details:', error);
+      throw error;
+    }
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error storing meal input:', error);
+    if (error instanceof Error) {
+      return { data: null, error: { message: error.message } };
+    }
+    return { data: null, error: { message: 'Failed to store meal input' } };
+  }
+}
