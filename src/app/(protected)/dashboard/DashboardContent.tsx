@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -8,10 +8,7 @@ import { TrendingUp, Dumbbell, Droplet, Activity, History, BarChart, Settings, L
 import { DashboardCard } from '@/components/dashboard/dashboard-card';
 import { NutrientProgress } from '@/components/dashboard/nutrient-progress';
 import DashboardHeader from '@/components/dashboard/dashboard-header';
-import HistoryPage from '../history/page';
-import InsightsPage from '../insights/page';
-import ActivityPage from '../activity/page';
-import SettingsPage from '../settings/page';
+import dynamic from 'next/dynamic';
 import { LogMealVoice } from '@/components/log-meal/log-meal-voice';
 import { LogMealText } from '@/components/log-meal/log-meal-text';
 import { Meal } from '../history/types';
@@ -19,16 +16,21 @@ import { useRouter } from 'next/navigation';
 import { calculateMacronutrients, calculateMicronutrients } from '@/utils/nutrientCalculations';
 import { prepareCalorieTrendData } from '@/utils/prepareChartData';
 import { supabase } from '@/lib/supabaseClient';
-import BillingContent from '../billing/page';
-import PricingContent from '../pricing/page';
-import ContactContent from '../contact/page';
+
+const HistoryPage = dynamic(() => import('../history/page'), { ssr: false });
+const InsightsPage = dynamic(() => import('../insights/page'), { ssr: false });
+const ActivityPage = dynamic(() => import('../activity/page'), { ssr: false });
+const SettingsPage = dynamic(() => import('../settings/page'), { ssr: false });
+const BillingContent = dynamic(() => import('../billing/page'), { ssr: false });
+const PricingContent = dynamic(() => import('../pricing/page'), { ssr: false });
+const ContactContent = dynamic(() => import('../contact/page'), { ssr: false });
 
 interface User {
   id: string;
   // Add other user properties as needed
 }
 
-const DashboardContent = () => {
+function DashboardContent() {
   const router = useRouter();
 
   const [user, setUser] = useState<User | null>(null);
@@ -54,73 +56,61 @@ const DashboardContent = () => {
   const [trendMealHistory, setTrendMealHistory] = useState<Meal[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user as User);
-      setLoading(false);
-      if (!user) {
-        router.push('/login');
-      }
-    };
-
-    fetchUser();
+  const fetchUser = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    setUser(user as User);
+    setLoading(false);
+    if (!user) {
+      router.push('/login');
+    }
   }, [router]);
 
-  useEffect(() => {
-    const fetchMeals = async () => {
-      if (!user) return;
+  const fetchMeals = useCallback(async () => {
+    if (!user) return;
 
-      const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toISOString().split('T')[0];
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    const oneWeekAgoStr = oneWeekAgo.toISOString().split('T')[0];
 
-      // Fetch today's meals for dashboard cards
-      const { data: todayMealsData, error: todayError } = await supabase
+    const [todayMealsResponse, trendMealsResponse] = await Promise.all([
+      supabase
         .from('meals')
         .select('*')
         .eq('user_id', user.id)
         .gte('logged_at', today)
-        .order('logged_at', { ascending: false });
-
-      if (todayError) {
-        console.error('Error fetching today\'s meals:', todayError);
-        return;
-      }
-
-      setTodayMeals(todayMealsData as Meal[]);
-      
-      const todayCalories = todayMealsData
-        .reduce((sum: number, meal: Meal) => sum + (meal.meal_details?.calories || 0), 0);
-      setCaloriesConsumed(todayCalories);
-
-      setMacroData(calculateMacronutrients(todayMealsData));
-      setMicroData(calculateMicronutrients(todayMealsData));
-
-      // Fetch meals for the past week for the trend chart
-      const oneWeekAgo = new Date();
-      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-      const oneWeekAgoStr = oneWeekAgo.toISOString().split('T')[0];
-
-      const { data: trendMeals, error: trendError } = await supabase
+        .order('logged_at', { ascending: false }),
+      supabase
         .from('meals')
         .select('*')
         .eq('user_id', user.id)
         .gte('logged_at', oneWeekAgoStr)
-        .order('logged_at', { ascending: true });
+        .order('logged_at', { ascending: true })
+    ]);
 
-      if (trendError) {
-        console.error('Error fetching trend meals:', trendError);
-        return;
-      }
+    if (todayMealsResponse.error) {
+      console.error('Error fetching today\'s meals:', todayMealsResponse.error);
+    } else {
+      setTodayMeals(todayMealsResponse.data as Meal[]);
+    }
 
-      setTrendMealHistory(trendMeals as Meal[]);
-    };
-
-    if (user) {
-      fetchMeals();
+    if (trendMealsResponse.error) {
+      console.error('Error fetching trend meals:', trendMealsResponse.error);
+    } else {
+      setTrendMealHistory(trendMealsResponse.data as Meal[]);
     }
   }, [user]);
 
-  // Add this useEffect to update derived states when todayMeals changes
+  useEffect(() => {
+    fetchUser();
+  }, [fetchUser]);
+
+  useEffect(() => {
+    if (user) {
+      fetchMeals();
+    }
+  }, [user, fetchMeals]);
+
   useEffect(() => {
     const todayCalories = todayMeals.reduce((sum, meal) => sum + (meal.meal_details?.calories || 0), 0);
     setCaloriesConsumed(todayCalories);
@@ -129,7 +119,7 @@ const DashboardContent = () => {
     setMicroData(calculateMicronutrients(todayMeals));
   }, [todayMeals]);
 
-  const handleLogMealVoice = (mealDetails: {
+  const handleLogMealVoice = useCallback((mealDetails: {
     meal_name: string;
     calories: number;
     nutrients: { name: string; amount: number; unit: string }[];
@@ -139,14 +129,14 @@ const DashboardContent = () => {
   }) => {
     console.log("Logging meal via voice:", mealDetails);
     // TODO: Implement voice logging logic here
-  };
+  }, []);
 
-  const handleLogMealText = (mealDetails: unknown) => {
+  const handleLogMealText = useCallback((mealDetails: unknown) => {
     console.log("Meal logged via text:", mealDetails);
     // TODO: Add any additional UI updates or messages if needed
-  };
+  }, []);
 
-  const renderContent = () => {
+  const renderContent = useMemo(() => {
     switch (activeTab) {
       case 'dashboard':
         return (
@@ -295,7 +285,7 @@ const DashboardContent = () => {
       default:
         return null;
     }
-  };
+  }, [activeTab, caloriesConsumed, calorieGoal, microData, macroData, trendMealHistory]);
 
   if (loading) {
     return <div>Loading...</div>;
@@ -357,7 +347,7 @@ const DashboardContent = () => {
           setActiveTab={setActiveTab}
         />
         <div className="p-8">
-          {renderContent()}
+          {renderContent}
         </div>
       </main>
 
@@ -367,15 +357,17 @@ const DashboardContent = () => {
       </div>
     </div>
   );
-};
+}
 
-const MacroLabel = ({ color, label, value }: { color: string; label: string; value: string }) => (
+const MacroLabel = React.memo(({ color, label, value }: { color: string; label: string; value: string }) => (
   <div className="flex items-center space-x-2">
     <div className={`w-3 h-3 rounded-full`} style={{ backgroundColor: color }}></div>
     <div className="text-sm font-medium">{label}:</div>
     <div className="text-sm font-bold">{value}</div>
   </div>
-);
+));
+
+MacroLabel.displayName = 'MacroLabel';
 
 const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1'];
 
