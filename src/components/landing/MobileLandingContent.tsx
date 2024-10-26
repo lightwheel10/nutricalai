@@ -14,6 +14,8 @@ import TestimonialMarquee from '@/components/landing/TestimonialMarquee';
 import Footer from '@/components/landing/Footer';
 import AvatarCircles from '@/components/landing/AvatarCircles';
 import WaitlistPopup from '@/components/landing/WaitlistPopup';
+import { usePageTracking, useTimeOnPage } from '@/hooks/useAnalytics'
+import { trackEvent } from '@/lib/analytics/config'
 
 const avatarUrls = [
   "https://avatars.githubusercontent.com/u/16860528",
@@ -63,19 +65,104 @@ const itemVariants = {
 };
 
 const MobileLandingContent: React.FC = () => {
+  usePageTracking()
+  useTimeOnPage('Mobile Landing')
+
   const [isScrolled, setIsScrolled] = useState(false);
   const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
+      if (window.scrollY > 10) {
+        trackEvent({
+          action: 'scroll',
+          category: 'User Interaction',
+          label: 'Mobile Header Scroll',
+        })
+      }
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const openWaitlist = () => setIsWaitlistOpen(true);
-  const closeWaitlist = () => setIsWaitlistOpen(false);
+  // Track section visibility
+  useEffect(() => {
+    const sections = ['pricing', 'features', 'waitlist']
+    const observers: IntersectionObserver[] = []
+
+    sections.forEach(section => {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              trackEvent({
+                action: 'section_view',
+                category: 'Content Engagement',
+                label: `Mobile ${section}`,
+              })
+              observer.unobserve(entry.target)
+            }
+          })
+        },
+        { threshold: 0.5 }
+      )
+
+      const element = document.getElementById(section)
+      if (element) {
+        observer.observe(element)
+        observers.push(observer)
+      }
+    })
+
+    return () => observers.forEach(observer => observer.disconnect())
+  }, [])
+
+  const openWaitlist = () => {
+    trackEvent({
+      action: 'button_click',
+      category: 'Mobile User Interaction',
+      label: 'Join Waitlist',
+    })
+    setIsWaitlistOpen(true)
+  };
+
+  const closeWaitlist = () => {
+    trackEvent({
+      action: 'button_click',
+      category: 'Mobile User Interaction',
+      label: 'Close Waitlist',
+    })
+    setIsWaitlistOpen(false)
+  };
+
+  const trackStepView = (stepNumber: string) => {
+    trackEvent({
+      action: 'step_view',
+      category: 'Mobile User Interaction',
+      label: `How It Works Step ${stepNumber}`,
+    })
+  };
+
+  // Add tracking to steps mapping
+  const renderSteps = steps.map((step, index) => (
+    <motion.div 
+      key={index} 
+      className="flex flex-col items-center mb-8 text-center relative"
+      variants={itemVariants}
+      onViewportEnter={() => trackStepView(step.number)}
+    >
+      <div className="w-16 h-16 bg-gray-900 text-white rounded-full flex items-center justify-center text-xl font-bold mb-4">
+        {step.number}
+      </div>
+      <h3 className="text-lg font-semibold mb-2">{step.title}</h3>
+      <p className="text-gray-600 text-sm mb-4">{step.description}</p>
+      <p className="text-gray-900 font-semibold text-sm">{step.stat}</p>
+      {index < steps.length - 1 && (
+        <ArrowRight className="text-gray-400 my-4" />
+      )}
+    </motion.div>
+  ));
 
   return (
     <div className="flex flex-col min-h-screen bg-white text-gray-900">
@@ -134,23 +221,7 @@ const MobileLandingContent: React.FC = () => {
             initial="hidden"
             animate="visible"
           >
-            {steps.map((step, index) => (
-              <motion.div 
-                key={index} 
-                className="flex flex-col items-center mb-8 text-center relative"
-                variants={itemVariants}
-              >
-                <div className="w-16 h-16 bg-gray-900 text-white rounded-full flex items-center justify-center text-xl font-bold mb-4">
-                  {step.number}
-                </div>
-                <h3 className="text-lg font-semibold mb-2">{step.title}</h3>
-                <p className="text-gray-600 text-sm mb-4">{step.description}</p>
-                <p className="text-gray-900 font-semibold text-sm">{step.stat}</p>
-                {index < steps.length - 1 && (
-                  <ArrowRight className="text-gray-400 my-4" />
-                )}
-              </motion.div>
-            ))}
+            {renderSteps}
           </motion.div>
         </section>
 

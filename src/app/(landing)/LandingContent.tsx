@@ -17,6 +17,8 @@ import WaitlistPopup from '@/components/landing/WaitlistPopup'
 import AvatarCircles from '@/components/landing/AvatarCircles'
 import { useScreenSize } from '@/hooks/useScreenSize'
 import MobileLandingContent from '@/components/landing/MobileLandingContent'
+import { usePageTracking, useTimeOnPage } from '@/hooks/useAnalytics'
+import { trackEvent } from '@/lib/analytics/config'
 
 const avatarUrls = [
   "https://avatars.githubusercontent.com/u/16860528",
@@ -74,6 +76,9 @@ declare global {
 }
 
 export default function LandingContent() {
+  usePageTracking()
+  useTimeOnPage('Desktop Landing')
+
   const [isScrolled, setIsScrolled] = useState(false)
   const [isWaitlistOpen, setIsWaitlistOpen] = useState(false)
   const isMobile = useScreenSize()
@@ -112,13 +117,25 @@ export default function LandingContent() {
   }, []);
 
   const scrollTo = (id: string) => {
+    trackEvent({
+      action: 'navigation',
+      category: 'User Interaction',
+      label: `Scroll to ${id}`,
+    })
     const element = document.getElementById(id)
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' })
     }
   }
 
-  const openWaitlist = () => setIsWaitlistOpen(true)
+  const openWaitlist = () => {
+    trackEvent({
+      action: 'button_click',
+      category: 'User Interaction',
+      label: 'Join Waitlist',
+    })
+    setIsWaitlistOpen(true)
+  }
   const closeWaitlist = () => setIsWaitlistOpen(false)
 
   if (isMobile) {
