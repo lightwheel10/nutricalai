@@ -32,19 +32,28 @@ const steps = [
     number: '1', 
     title: 'Snap, Speak, or Type', 
     description: 'Log meals in your language using voice, text, or photos - as natural as telling a friend what you ate.',
-    stat: '93% faster than manual logging'
+    stat: {
+      number: '93%',
+      text: 'faster than manual logging'
+    }
   },
   { 
     number: '2', 
     title: 'Let AI Do The Math', 
     description: 'Instant nutritional breakdown with precise calories, macros, and micronutrients - no guesswork needed.',
-    stat: '99.9% accuracy in analysis'
+    stat: {
+      number: '99.9%',
+      text: 'accuracy in analysis'
+    }
   },
   { 
     number: '3', 
     title: 'Achieve Your Goals', 
     description: 'Get personalized insights and track your progress with easy-to-understand dashboards and trends.',
-    stat: '87% of users reach their goals'
+    stat: {
+      number: '87%',
+      text: 'of users reach their goals'
+    }
   },
 ]
 
@@ -202,7 +211,7 @@ export default function LandingContent() {
           <div className="container px-4 md:px-6">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-12 sm:mb-16">How It Works</h2>
             <motion.div 
-              className="flex flex-col md:flex-row justify-between items-start max-w-6xl mx-auto"
+              className="flex flex-col md:flex-row justify-between items-start max-w-7xl mx-auto gap-12 md:gap-16"
               variants={containerVariants}
               initial="hidden"
               animate="visible"
@@ -213,14 +222,19 @@ export default function LandingContent() {
                   className="flex flex-col items-center mb-12 md:mb-0 md:w-1/3 text-center relative"
                   variants={itemVariants}
                 >
-                  <div className="w-16 h-16 bg-gray-900 text-white rounded-full flex items-center justify-center text-xl font-bold mb-4">
+                  <div className="w-16 h-16 bg-gray-900 text-white rounded-full flex items-center justify-center text-xl font-bold mb-6">
                     {step.number}
                   </div>
-                  <h3 className="text-lg sm:text-xl font-semibold mb-2">{step.title}</h3>
-                  <p className="text-gray-600 text-sm sm:text-base mb-4">{step.description}</p>
-                  <p className="text-gray-900 font-semibold text-sm sm:text-base">{step.stat}</p>
+                  <h3 className="text-lg sm:text-xl font-semibold mb-4">{step.title}</h3>
+                  <p className="text-gray-600 text-sm sm:text-base mb-6">{step.description}</p>
+                  <p className="text-gray-900 font-semibold text-sm sm:text-base">
+                    <span className="text-green-600">{step.stat.number}</span> {step.stat.text}
+                  </p>
                   {index < steps.length - 1 && (
-                    <ArrowRight className="hidden md:block text-gray-400 absolute top-1/2 -right-4 transform -translate-y-1/2" />
+                    <ArrowRight 
+                      className="hidden md:block text-gray-400 absolute top-8 -right-8 transform scale-150"
+                      strokeWidth={1.5}
+                    />
                   )}
                 </motion.div>
               ))}
