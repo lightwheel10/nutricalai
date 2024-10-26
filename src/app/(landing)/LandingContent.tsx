@@ -26,9 +26,24 @@ const avatarUrls = [
 ]
 
 const steps = [
-  { number: '1', title: 'Log Your Meal', description: 'Use voice, text, or photo to easily log your meals.' },
-  { number: '2', title: 'AI Analysis', description: 'Our AI recognizes the food and calculates calories, macros, and micros.' },
-  { number: '3', title: 'Track Progress', description: 'Monitor your calorie intake and nutritional balance effortlessly.' },
+  { 
+    number: '1', 
+    title: 'Snap, Speak, or Type', 
+    description: 'Log meals in your language using voice, text, or photos - as natural as telling a friend what you ate.',
+    stat: '93% faster than manual logging'
+  },
+  { 
+    number: '2', 
+    title: 'Let AI Do The Math', 
+    description: 'Instant nutritional breakdown with precise calories, macros, and micronutrients - no guesswork needed.',
+    stat: '99.9% accuracy in analysis'
+  },
+  { 
+    number: '3', 
+    title: 'Achieve Your Goals', 
+    description: 'Get personalized insights and track your progress with easy-to-understand dashboards and trends.',
+    stat: '87% of users reach their goals'
+  },
 ]
 
 const containerVariants = {
@@ -138,14 +153,14 @@ export default function LandingContent() {
             <div className="flex flex-col lg:flex-row items-center justify-center space-y-8 lg:space-y-0 lg:space-x-8 text-center lg:text-left">
               <div className="flex-1 space-y-4 max-w-3xl">
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tighter">
-                  Track Calories with AI Precision
+                  Say Goodbye to Manual Food Tracking
                 </h1>
                 <p className="mx-auto lg:mx-0 max-w-[700px] text-gray-600 text-base sm:text-lg md:text-xl">
-                  Join our waitlist for the most advanced AI-powered calorie tracking app. Effortlessly manage your nutrition and reach your health goals.
+                No more searching databases or guessing portions. Simply tell our AI what you&apos;re eating - in any language - and get instant nutritional insights. It&apos;s that easy.
                 </p>
                 <div className="space-x-4">
                   <Button size="lg" className="bg-gray-900 text-white hover:bg-gray-800" onClick={openWaitlist}>
-                    Join Waitlist
+                  Get Early Access
                   </Button>
                 </div>
                 <div className="pt-4">
@@ -166,7 +181,35 @@ export default function LandingContent() {
           </div>
         </section>
 
-        <Features />
+        <section className="w-full py-16 sm:py-24 md:py-32 lg:py-48 bg-gray-50">
+          <div className="container px-4 md:px-6">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-12 sm:mb-16">How It Works</h2>
+            <motion.div 
+              className="flex flex-col md:flex-row justify-between items-start max-w-6xl mx-auto"
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              {steps.map((step, index) => (
+                <motion.div 
+                  key={index} 
+                  className="flex flex-col items-center mb-12 md:mb-0 md:w-1/3 text-center relative"
+                  variants={itemVariants}
+                >
+                  <div className="w-16 h-16 bg-gray-900 text-white rounded-full flex items-center justify-center text-xl font-bold mb-4">
+                    {step.number}
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-semibold mb-2">{step.title}</h3>
+                  <p className="text-gray-600 text-sm sm:text-base mb-4">{step.description}</p>
+                  <p className="text-gray-900 font-semibold text-sm sm:text-base">{step.stat}</p>
+                  {index < steps.length - 1 && (
+                    <ArrowRight className="hidden md:block text-gray-400 absolute top-1/2 -right-4 transform -translate-y-1/2" />
+                  )}
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
 
         <section className="w-full py-24 md:py-32 lg:py-48">
           <div className="container px-4 md:px-6">
@@ -216,34 +259,7 @@ export default function LandingContent() {
 
         <Pricing />
 
-        <section className="w-full py-16 sm:py-24 md:py-32 lg:py-48 bg-gray-50">
-          <div className="container px-4 md:px-6">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-12 sm:mb-16">How It Works</h2>
-            <motion.div 
-              className="flex flex-col md:flex-row justify-between items-start max-w-6xl mx-auto"
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-            >
-              {steps.map((step, index) => (
-                <motion.div 
-                  key={index} 
-                  className="flex flex-col items-center mb-12 md:mb-0 md:w-1/3 text-center relative"
-                  variants={itemVariants}
-                >
-                  <div className="w-16 h-16 bg-gray-900 text-white rounded-full flex items-center justify-center text-xl font-bold mb-4">
-                    {step.number}
-                  </div>
-                  <h3 className="text-lg sm:text-xl font-semibold mb-2">{step.title}</h3>
-                  <p className="text-gray-600 text-sm sm:text-base mb-4">{step.description}</p>
-                  {index < steps.length - 1 && (
-                    <ArrowRight className="hidden md:block text-gray-400 absolute top-1/2 -right-4 transform -translate-y-1/2" />
-                  )}
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </section>
+        <Features />
 
         <Waitlist />
 
